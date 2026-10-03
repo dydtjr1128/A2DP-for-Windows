@@ -8,5 +8,7 @@
 - starter kit 기반 작업 지침, 이슈·PR 양식, 텍스트·생성 파일 규칙
 - 요구사항, Windows/Rust 상세 구조, 상태·IPC·버퍼 계약과 설계 결정 3건
 - 코덱 도입·배포 조건, 단계별 구현 순서와 실기·복구 검증 기준
+- Rust 1.99.0 workspace, 외부 Cargo 의존성 없는 `no_std` codec 후보 정책과 12개 경계 테스트·문서 예제
+- 저장소 검사·fmt·clippy·test·release build·rustdoc 스크립트와 Windows/Linux CI
 
 배포 가능한 드라이버 릴리스는 아직 없습니다.

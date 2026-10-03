@@ -1,0 +1,49 @@
+name: CI
+
+"on":
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    name: Core (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.13"
+      - name: Repository check dependencies
+        run: python -m pip install -r scripts/requirements-checks.txt
+      - name: Pinned Rust toolchain
+        run: |
+          $taskToolchain = python -c "import tomllib; print(tomllib.load(open('rust-toolchain.toml', 'rb'))['toolchain']['channel'])"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          rustup toolchain install $taskToolchain --profile minimal --component clippy --component rustfmt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          rustc --version
+          cargo --version
+      - name: Repository and Rust checks
+        run: ./scripts/check.ps1 -Mode Full

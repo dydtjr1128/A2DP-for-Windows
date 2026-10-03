@@ -24,7 +24,7 @@
 | active | peer accept와 스트림 시작이 확인된 설정, 중단 상태에서는 없음 |
 | reason | fallback, 기능 미구현, peer reject, query 실패 등 구분된 이유 |
 
-출시 초기의 backend inventory는 **비어 있음**이 기본입니다. 샘플 데이터나 테스트 fixture의 codec 집합을 런타임 장치 조회 결과로 사용하지 않습니다. 권리 검토 완료와 backend runtime readiness는 별도 조건이며 코드 한 boolean으로 법적 승인까지 표현하지 않습니다.
+현재 workspace에는 encoder가 없으므로 backend inventory는 **비어 있음**이 기본입니다. [select_codec 구현](../crates/a2dp-core/src/codec.rs)은 호출자가 제공한 목록의 정책만 계산하며 discovery나 license 판단을 수행하지 않습니다. 샘플 데이터나 테스트 fixture의 codec 집합을 런타임 장치 조회 결과로 사용하지 않습니다. 권리 검토 완료와 backend runtime readiness는 별도 조건이며 코드 한 boolean으로 법적 승인까지 표현하지 않습니다.
 
 ## 세션과 상태 전이
 

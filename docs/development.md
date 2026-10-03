@@ -2,9 +2,32 @@
 
 ## 현재 단계
 
-저장소는 협업 규칙과 설계를 먼저 갖추는 단계입니다. 아직 실행 가능한 앱, encoder, 설치 가능한 driver가 없습니다. Rust 기반 PR에서 실제 manifest·검사 스크립트·CI를 추가한 뒤 이 문서의 명령을 갱신합니다.
+`crates/a2dp-core`는 `no_std`의 순수 codec 후보 정책 library입니다. 외부 Cargo dependency가 없으며, 실제 encoder·앱·장치 조회·driver는 없습니다. 일반 Rust 빌드와 Windows/Linux CI가 검사하는 범위도 이 library와 저장소 문서입니다.
 
-현재 가능한 검사는 저장소 루트의 `git diff --check`, Markdown 상대 링크와 GitHub YAML 파싱입니다. 실제 재생 검증은 [검증 계획](validation.md)을 따릅니다.
+## 준비와 실제 검사 명령
+
+1. Rustup을 준비한다. 저장소의 [toolchain 파일](../rust-toolchain.toml)이 Rust 1.99.0, rustfmt, clippy를 선택한다.
+2. Windows에는 MSVC C++ Build Tools와 Windows SDK를 준비한다. 일반 library 테스트에는 WDK가 필요 없다.
+3. Python 3.11 이상과 PowerShell 7 이상을 준비한다. 프로젝트 기본 검사에 PyYAML 6.0.3을 사용한다.
+4. 저장소 루트에서 아래 명령을 실행한다. CI도 같은 스크립트를 사용한다.
+
+```powershell
+python -m pip install -r scripts/requirements-checks.txt
+pwsh -NoProfile -File scripts/check.ps1
+```
+
+| 명령 | 검사·생성 결과 |
+| --- | --- |
+| `python scripts/check_repository.py` | Git에 포함되거나 ignore되지 않은 소스의 UTF-8/LF, inline 상대 링크 대상, fence, YAML/TOML, form ID·PR 필수 항목 |
+| `pwsh -NoProfile -File scripts/check.ps1 -Mode Quick` | 저장소 검사, diff, rustfmt, clippy |
+| `pwsh -NoProfile -File scripts/check.ps1` | Quick + Rust tests/doctest, release library build, rustdoc |
+| `cargo test --workspace --locked` | 12개 정책 테스트와 1개 문서 예제 |
+| `cargo build --workspace --release --locked` | `target/release/`의 library, 실행 파일·driver 없음 |
+| `cargo doc --workspace --no-deps --locked` | `target/doc/`의 Rust API 문서 |
+
+저장소 검사는 외부 URL·Markdown anchor·GitHub 서버 전체 schema를 검증하지 않습니다. 정책 exhaustive 테스트는 64×64 capability 조합에서 반환한 후보가 양쪽에 존재하는지 확인하며 실제 장비 목록을 사용하지 않습니다. `Codec::ALL`은 목표 identity 목록으로 local encoder inventory가 아닙니다.
+
+`Cargo.lock`을 커밋하고 CI는 `--locked`를 사용합니다. toolchain 갱신은 별도 변경으로 로컬·CI를 확인합니다. Cargo publish는 비활성화되어 있습니다. 실제 재생 검증은 [검증 계획](validation.md)을 따릅니다.
 
 ## 일반 Rust 코드와 driver 환경 분리
 
