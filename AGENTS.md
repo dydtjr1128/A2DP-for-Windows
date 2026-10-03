@@ -11,7 +11,7 @@
 | 목적과 주요 사용 흐름 | Windows PC의 재생음을 Bluetooth 헤드폰으로 전송하고 코덱을 제어. [README](README.md) |
 | 실행·배포 환경과 지원 런타임 | Windows 11 x64 우선. Rust 중심. 실제 드라이버와 코덱은 아직 미구현 |
 | 주요 소스·테스트 위치 | 현재 문서와 `.github/` 양식. 소스 추가 시 빌드·검사 명령도 함께 갱신 |
-| 구조·동작 규칙의 담당 문서 | [README](README.md), [템플릿 적용 기록](docs/starter-kit-adoption.md). 상세 설계는 다음 단계에서 추가 |
+| 구조·동작 규칙의 담당 문서 | [설계 문서](docs/README.md), [아키텍처](docs/architecture.md), [인터페이스](docs/interfaces.md), [검증 계획](docs/validation.md) |
 | 생성 파일·사용자 데이터 위치와 편집 제한 | `target/`, `artifacts/`, 로그·덤프·서명 키는 커밋 금지. 장치 주소·사용자 경로는 공개 기록에서 제거 |
 | 외부 연동·권한·민감 정보 경계 | OS 드라이버·Bluetooth·오디오. 설치, 장치 바인딩 변경, 테스트 서명과 부팅 보안 설정 변경은 별도 실기 검증 작업 |
 | 기본 브랜치·머지 방식·필수 검사 | `main`, merge commit으로 단계별 커밋 보존. diff·링크·양식 확인, 코드 도입 후 해당 검사 추가 |

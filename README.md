@@ -21,10 +21,11 @@ A2DP는 Advanced Audio Distribution Profile이며, 이 프로젝트는 송신 �
 | [AGENTS.md](AGENTS.md) | 작업·검증·Git·이슈·PR 공통 규칙 |
 | [CLAUDE.md](CLAUDE.md) | 공통 지침 import |
 | [.github](.github) | 결함·개선·부모·질문 이슈 폼과 PR 양식 |
+| [설계 문서](docs/README.md) | 요구사항, 아키텍처, 인터페이스, ADR, 구현·실기 검증 계획 |
 | [템플릿 적용 기록](docs/starter-kit-adoption.md) | 원본 revision, 적용·조정 내역 |
 | [CHANGELOG.md](CHANGELOG.md) | 단계별 변경 이력 |
 
-상세 설계와 Rust 빌드 기반은 후속 단계에서 추가합니다. 저장소 자체의 배포 라이선스는 아직 정하지 않았으며, 외부 코덱 소스·바이너리는 포함하지 않습니다.
+상세 구조는 [아키텍처](docs/architecture.md), 다음 구현 단계는 [로드맵](docs/roadmap.md)을 따릅니다. Rust 빌드 기반은 다음 단계에서 추가합니다. 저장소 자체의 배포 라이선스는 아직 정하지 않았으며, 외부 코덱 소스·바이너리는 포함하지 않습니다.
 
 ## 기여와 검증
 
