@@ -25,7 +25,7 @@ pwsh -NoProfile -File scripts/check.ps1
 | `cargo build --workspace --release --locked` | `target/release/`의 library, 실행 파일·driver 없음 |
 | `cargo doc --workspace --no-deps --locked` | `target/doc/`의 Rust API 문서 |
 
-저장소 검사는 외부 URL·Markdown anchor·GitHub 서버 전체 schema를 검증하지 않습니다. 정책 exhaustive 테스트는 64×64 capability 조합에서 반환한 후보가 양쪽에 존재하는지 확인하며 실제 장비 목록을 사용하지 않습니다. `Codec::ALL`은 목표 identity 목록으로 local encoder inventory가 아닙니다.
+저장소 검사는 inline Markdown 외부 링크의 공식 도메인·경로 허용 범위를 검사하지만 외부 URL의 실제 응답·Markdown anchor·GitHub 서버 전체 schema를 검증하지 않습니다. 정책 exhaustive 테스트는 64×64 capability 조합에서 반환한 후보가 양쪽에 존재하는지 확인하며 실제 장비 목록을 사용하지 않습니다. `Codec::ALL`은 목표 identity 목록으로 local encoder inventory가 아닙니다.
 
 `Cargo.lock`을 커밋하고 CI는 `--locked`를 사용합니다. toolchain 갱신은 별도 변경으로 로컬·CI를 확인합니다. Cargo publish는 비활성화되어 있습니다. 실제 재생 검증은 [검증 계획](validation.md)을 따릅니다.
 

@@ -15,6 +15,8 @@
 
 ## 자동 검사
 
+문서 검사는 공식 자료·본 저장소에 해당하는 외부 링크의 도메인과 경로를 확인합니다. URL 응답과 문안의 의미는 자동 판정하지 않으므로 문서·코드·이미지·PR에 대한 수동 검토도 수행합니다.
+
 M0는 codec 선호 순서, strict 실패, SBC fallback opt-in, empty input, local/remote 불일치와 빈 backend inventory를 검증합니다. 일반 library는 `no_std`와 `unsafe` 금지를 유지합니다. Windows와 Linux에서 같은 pure logic을 검사하되 Linux 통과를 Windows driver 검증으로 표현하지 않습니다.
 
 후속 protocol/backend에서는 다음 경계를 추가합니다.
@@ -42,6 +44,10 @@ parser fuzz는 user mode에서 먼저 수행하고 crash sample은 합성 데이
 | 결과 | active codec·설정, duration, drops/underruns, disconnect reason, 복구 결과 |
 
 공개 보고에서는 device address, serial, user path, 녹음·dump를 제외합니다.
+
+## UI 검증
+
+[UI 상세 설계](ui-design.md)의 UX-01~12를 구현 수용 기준으로 사용합니다. 목업 이미지는 시각 검토 자료이며 클릭·키보드·Narrator·고대비·DPI·service 연동 검증을 대체하지 않습니다. 구현 후에는 준비 실패, 상태 조회 실패, 설정 저장/적용 분리, stale 응답, 장치 전환, 연결 종료와 복구 실패를 실제 UI에서 확인합니다.
 
 ## 초기 실기 목표
 

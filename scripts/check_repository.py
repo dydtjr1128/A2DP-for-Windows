@@ -15,6 +15,21 @@ import yaml
 
 
 ROOT = Path(__file__).resolve().parents[1]
+# Platform, specification owner, rights holder, and this repository only.
+DOCUMENT_URL_PATHS = {
+    "learn.microsoft.com": ("/en-us/windows",),
+    "github.com": (
+        "/microsoft/windows-drivers-rs",
+        "/dydtjr1128/A2DP-for-Windows",
+    ),
+    "www.bluetooth.com": ("/",),
+    "android.googlesource.com": (
+        "/platform/external/libldac",
+        "/platform/external/aac",
+        "/platform/packages/modules/Bluetooth",
+    ),
+    "www.via-la.com": ("/licensing-programs/aac",),
+}
 PR_HEADINGS = (
     "요약",
     "변경",
@@ -70,7 +85,24 @@ def check_markdown(path, content):
         for raw_target in re.findall(r"\[[^\]\n]+\]\(([^)\n]+)\)", line):
             target = raw_target.strip().removeprefix("<").removesuffix(">")
             parsed = urlsplit(target)
-            if parsed.scheme or parsed.netloc or not parsed.path:
+            if parsed.scheme or parsed.netloc:
+                prefixes = DOCUMENT_URL_PATHS.get(parsed.hostname, ())
+                permitted = any(
+                    prefix == "/"
+                    or parsed.path == prefix
+                    or parsed.path.startswith(prefix + "/")
+                    or (prefix == "/en-us/windows" and parsed.path.startswith(prefix + "-"))
+                    for prefix in prefixes
+                )
+                require(
+                    parsed.scheme == "https"
+                    and parsed.username is None
+                    and parsed.port in {None, 443}
+                    and permitted,
+                    f"{path}:{number}: unapproved documentation URL {target}",
+                )
+                continue
+            if not parsed.path:
                 continue
             destination = path.parent / unquote(parsed.path)
             require(destination.exists(), f"{path}:{number}: missing link target {target}")
