@@ -1,0 +1,37 @@
+# Rust and native build output
+/target/
+**/target/
+/artifacts/
+**/Debug/
+**/Release/
+**/x64/
+**/ARM64/
+*.obj
+*.pdb
+*.ilk
+*.sys
+*.cat
+*.msi
+*.msix
+
+# Local IDE and OS state
+.vs/
+.idea/
+*.user
+*.suo
+Thumbs.db
+.DS_Store
+__pycache__/
+
+# Local secrets, recordings and diagnostics
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.key
+*.dmp
+*.etl
+*.log
+/recordings/
+/private/
