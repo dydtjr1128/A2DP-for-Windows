@@ -74,7 +74,7 @@ UI/CLI ↔ 서비스는 **로컬 named pipe**, 서비스 ↔ driver는 장치 in
 | 명령 | 결과 | 권한·제약 |
 | --- | --- | --- |
 | ListDevices | 비식별 ID, 연결 상태, 조회 상태 | 조회만, 권한 없는 장치 경로 노출 금지 |
-| GetCapabilities | local/remote codec별 제약, query generation | unknown과 empty를 구분 |
+| GetCapabilities | local/remote codec별 제약, query generation, 설정 control의 지원 범위 | unknown과 empty를 구분, 미구현 control은 불가 이유 포함 |
 | GetSession | desired/proposed/active, lifecycle, counters | snapshot 자체 generation 포함 |
 | SavePolicy | desired 저장과 새 policy revision | expected revision 검사, 현재 스트림은 유지 |
 | ApplyPolicy | 저장된 revision의 적용 결과 또는 재시작 필요 | generation·policy revision 검사, 저장 성공과 적용 성공 구분 |
@@ -84,6 +84,10 @@ UI/CLI ↔ 서비스는 **로컬 named pipe**, 서비스 ↔ driver는 장치 in
 pipe ACL은 서비스 SID와 허용된 로컬 사용자만 접근시키고 remote client를 거부합니다. 다른 Windows 로그인 세션의 장치 제어 정책은 M2에서 명확히 정합니다. 인증한 pipe client를 기준으로 권한을 판단하며 JSON의 user 필드를 신뢰하지 않습니다.
 
 UI의 저장하고 적용은 SavePolicy 성공 후 해당 revision으로 ApplyPolicy를 요청합니다. 저장 실패 시 ApplyPolicy를 보내지 않습니다. 저장 성공·적용 실패에서는 desired를 보존하고 실제 active 상태를 따로 보고합니다. 다른 client의 동시 수정은 revision 충돌로 거부하며, 상세 사용자 흐름은 [UI 설계](ui-design.md)를 따릅니다.
+
+장치별 desired 설정의 계획 항목은 codec preference, sample rate mode/value, channel mode, bitrate mode/value, buffer profile, 명시적 SBC fallback, 장치 도착 시 자동 연결입니다. 미지원·읽기 전용·숨은 parameter를 저장 요청에 넣어 우회하지 못하도록 서비스가 재검증합니다. 자동 mode에서는 고정값이 활성 설정으로 해석되지 않아야 합니다.
+
+capability의 설정 descriptor는 알려진 parameter ID, 허용 enum 또는 min/max/step, readonly, 적용 시 재연결 필요 여부, 불가 이유 code를 전달합니다. UI의 문구·control 종류는 승인된 ID와 연결하고 임의 markup을 렌더링하지 않습니다. 품질 프리셋은 서비스가 검증한 parameter 집합이며 수동 변경 후에는 custom 상태로 표시합니다. wire schema와 각 codec의 수치 범위는 backend 구현 시 확정합니다.
 
 ## Driver 제어·버퍼 계약 제안
 

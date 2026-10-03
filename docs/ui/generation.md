@@ -1,0 +1,14 @@
+# 장치 설정 시안 생성 기록
+
+- 생성일: 2026-10-03 (KST)
+- 방식: 내장 ImageGen, 이 프로젝트에서 생성한 어두운 좌우 분할 초안을 편집
+- 결과: [device-settings.png](device-settings.png)
+- 반영 요구: 왼쪽 오디오 기기 선택, 오른쪽에 다양한 설정 control, 현재 적용값과 미적용 설정 분리
+- 용도: 후속 UI 구현의 시각 기준. 현재 앱 실행 화면이나 실기 측정 결과가 아님
+- 기능 계약: [UI 상세 설계](../ui-design.md)
+
+## 최종 편집 프롬프트
+
+```text
+Edit this selected desktop UI concept following the user's explicit feedback: keep its dark graphite / charcoal surface, subdued mint accent, restrained icons, clear white typography, and LEFT AUDIO DEVICE SELECTOR, but the RIGHT SIDE must contain a useful rich device-settings interface instead of a giant codec status poster. Target 1440 x 1024, native Windows desktop app filling the frame. The actual product name in the title bar MUST be exactly 'A2DP for Windows'; replace the existing concept title with that. Do not render any internal concept name or any third-party product/project names or URLs. Preserve left device rail about 300px wide with '오디오 기기', selected '책상 헤드폰' marked '연결됨', then '휴대용 스피커' marked '연결 안 됨'; small '진단' and '앱 설정' below a divider. RIGHT PANE: start with heading '책상 헤드폰', a compact inline status line '연결됨 · 현재 SBC · 48 kHz · 스테레오', and a modest '연결 끊기' action at top right. Directly below, show a clear compact notice '변경 사항이 아직 적용되지 않았습니다.' Use three tabs '오디오 설정' active, '연결', '장치 정보'. The main visible audio settings MUST contain actual diverse controls in three clearly separated, compact groups, not nested cards: GROUP '코덱과 형식': dropdown '선호 코덱' selected 'LDAC', dropdown '샘플레이트' selected '48 kHz', dropdown '채널' selected '스테레오' with a small disabled explanation '장치가 제공하는 형식'; GROUP '음질과 안정성': dropdown '비트레이트' selected '자동', a 3-segment control '안정성 / 균형 / 음질' with '균형' selected, dropdown '오디오 버퍼' selected '자동 (권장)' with short supporting text '버퍼를 늘리면 지연이 증가할 수 있습니다.'; GROUP '연결 동작': off toggle '공통 코덱이 없으면 SBC 사용', off toggle '장치가 다시 나타나면 자동 연결'. Values are hypothetical future UI sample data; include footer '설계 시안 · 예시 데이터'. Keep an unobtrusive bottom sticky action row with main mint button '저장하고 적용', secondary '저장만', and quiet text action '변경 취소'. Small note '저장만 하면 현재 연결은 유지됩니다.' The hero use case is configuring the selected audio device: do not add a giant SBC text, music player, volume equalizer, album art, metrics dashboard, battery/signal guesses, fake latency numbers, ads, sign-in, installation actions or other invented features. White/grey text high contrast, body 14-16px equivalent, heading 28px, purposeful space not huge empty areas. Keep form labels and controls aligned in rows or a neat two-column arrangement, around 8-10 controls fully readable within the pane. The right pane must clearly dominate the screen area and expose settings without needing to open another page. No illustration or photography is required. No additional variants, no option numbers, one polished final revised design only.
+```
