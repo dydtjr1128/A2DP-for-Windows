@@ -1,0 +1,115 @@
+name: 기능·개선 제안
+description: 기능, 성능, 리팩터링 또는 문서 개선 제안
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **작성 요령**
+        - **제목**: 대상과 원하는 변경을 짧게 표현. 예: `검색 결과 정렬 옵션 추가`
+        - **이슈 번호**: 목록 안의 `#번호`는 GitHub가 제목·상태로 펼쳐 줄이 길어짐. 목록 한 줄에는 번호 하나만 쓰고 여러 번호·관계는 표나 문장으로 작성
+        - **흐름도**: 구조·흐름 변화가 복잡할 때만 아래 `흐름도 (선택)`에 Mermaid로 추가. 짧은 흐름은 `입력 → 처리 → 결과`처럼 한 줄이면 충분
+        - **분할**: 독립적으로 끝낼 결과는 별도 구현 이슈로 나누고 공통 목표는 부모 이슈로 관리. 같은 완료 조건의 여러 PR은 이 양식에서 진행 관리
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: 요약
+      description: 짧은 불릿 2-3개, 명사형·단답형 종결(`~합니다`·`~습니다`·`~한다` 생략). 배경과 구현 상세는 아래에 작성
+      placeholder: |
+        - 검색 결과 정렬 옵션 부재
+        - 최신순·이름순 정렬 추가로 탐색 편의 개선
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: 현재 상태와 필요성 (AS-IS)
+      description: 누가 어떤 상황에서 겪는 불편인지, 현재 방법의 한계. 작은 변경은 1-2문장으로 충분
+      placeholder: |
+        - 현재 동작·사용 방법:
+        - 불편 또는 한계:
+    validations:
+      required: true
+
+  - type: textarea
+    id: target_state
+    attributes:
+      label: 목표 상태 (TO-BE)
+      description: 변경 뒤 달라질 결과. 구현 방법은 아래 제안에 작성
+      placeholder: |
+        - 변경 뒤 기대하는 동작·결과:
+    validations:
+      required: true
+
+  - type: textarea
+    id: flow_diagram
+    attributes:
+      label: 흐름도 (선택)
+      description: 구조·흐름 변화가 복잡할 때만 Mermaid 코드 입력(본문에는 mermaid 코드 블록으로 들어감). 실선은 현재 경로, 점선은 목표 경로. 단순한 변경은 비워 둠
+      placeholder: |
+        flowchart LR
+          A[입력] --> B[현재 처리] --> C[현재 결과]
+          A -.->|목표| D[새 처리] -.-> E[목표 결과]
+      render: mermaid
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 제안하는 방법과 범위
+      description: 목표 상태를 만드는 최소 변경과 포함·제외 범위. 새 의존성·기능은 실제 사용처와 기존 방법으로 해결할 수 없는 이유 작성. 방법이 미정이면 다음 확인 방법 작성
+      placeholder: |
+        - 제안 방법:
+        - 실제 사용처와 더 작은 대안 (해당 시):
+        - 포함 범위:
+        - 보존할 동작:
+        - 제외 범위:
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 완료 조건
+      description: 구현 방법보다 확인 가능한 결과를 체크박스로 작성
+      placeholder: |
+        - [ ] 최신순·이름순 선택 가능
+        - [ ] 정렬 변경 후 기존 검색 조건 유지
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 확인 근거 (선택)
+      description: 확인한 버전·커밋, 관련 코드·문서, 사용자 피드백 또는 측정값. 모르는 항목은 미확인으로 표시
+      placeholder: |
+        - 기준 버전 또는 커밋:
+        - 확인한 자료와 관찰 결과:
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 대안과 참고 자료 (선택)
+      description: 기존 기능 활용 가능성, 검토한 대안, 관련 문서, 호환성 영향
+
+  - type: textarea
+    id: relationships
+    attributes:
+      label: 관련 이슈 (선택)
+      description: 이미 확인한 중복·선행·관련 이슈가 있으면 작성. 관계 설정과 진행 계획은 구현 담당자가 필요한 때 보완
+      placeholder: |
+        | 관계 | 이슈 | 메모 |
+        | --- | --- | --- |
+        | 선행 | #번호 | 먼저 끝나야 하는 이유 |
+        | 관련 | #번호 | 함께 확인할 내용 |
+
+  - type: checkboxes
+    id: submission_checks
+    attributes:
+      label: 등록 확인
+      options:
+        - label: 관련 이슈와 현재 구현·문서에서 같은 제안 또는 이미 제공되는 기능 확인
+          required: true
+        - label: 첨부 자료의 비밀키·개인정보·불필요한 로컬 경로 제거 또는 해당 없음
+          required: true
