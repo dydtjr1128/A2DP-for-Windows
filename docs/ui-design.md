@@ -1,255 +1,219 @@
-# UI 상세 설계
+# UI/UX 상세 설계
 
-상태: **화면·상호작용 설계**, 앱 구현 전. Windows 11 데스크톱을 대상으로 독립 설계합니다. 기능 계약은 이 문서와 [인터페이스](interfaces.md)를 따릅니다. 시각 시안은 예시 데이터이며 장치 지원·실제 재생의 증거가 아닙니다.
+상태: 화면·상호작용 설계, 앱 구현 전. Windows 11용 독립 설정 도구입니다. **왼쪽 Bluetooth 기기 목록, 오른쪽 선택 기기의 상태와 설정**을 기본 구조로 사용합니다. 필드의 출처·단위·가용성은 [장치 상태 계약](device-status.md), 저장·적용은 [인터페이스](interfaces.md)를 따릅니다.
 
-확정 방향은 **어두운 좌우 분할 화면, 왼쪽 오디오 기기 선택, 오른쪽 선택 기기의 다양한 설정**입니다. 현재 적용 코덱은 상단 요약에 작게 유지하고, 오른쪽의 주 영역은 실제 설정 control에 사용합니다.
+![Bluetooth 기기별 현재 상태와 설정 시안](ui/device-settings.png)
 
-![오디오 기기 선택과 오른쪽 장치별 설정 시안](ui/device-settings.png)
+이미지의 상태와 수치는 합성 예시이며 실제 지원·측정 결과가 아닙니다. [시안 생성 기록](ui/generation.md)에 제작 정보를 남깁니다.
 
-위 이미지는 선택한 시각 방향에 장치별 설정 요구를 반영한 기준 시안입니다. 현재 SBC와 미적용 LDAC는 저장/적용 구분을 보여주는 합성 사례입니다. 실제 encoder 지원을 의미하지 않습니다. [시안 생성 기록](ui/generation.md)에 제작 방식과 프롬프트를 기록했습니다.
+## 1. 제품의 중심 동작은 설정
 
-## 1. 사용자가 바로 알아야 할 것
+사용자는 Windows에서 이미 페어링·연결한 Bluetooth 기기를 선택해 설정합니다. 기기 선택이나 **설정** 버튼은 오른쪽 편집 영역을 열 뿐 Bluetooth 연결을 시작하지 않습니다. 중심 action은 **설정 적용**, 보조 action은 **저장만 / 변경 취소**입니다.
 
-첫 화면에서 세 가지에 답합니다: **어느 장치에 연결하는가, 실제로 어떤 코덱을 쓰는가, 다음에 무엇을 할 수 있는가.** 기술 진단과 고급 옵션은 필요한 화면에서 펼칩니다.
+- pairing, radio 켜기·끄기, 전역 Bluetooth 연결·해제는 Windows 설정에서 담당한다.
+- 앱 창을 닫거나 설정 화면의 기기를 바꿔도 Windows 연결·현재 오디오·기본 출력 장치를 변경하지 않는다.
+- Windows 연결 상태, 앱 stream 상태, 현재 codec과 설정 가용성을 구분한다.
+- 원하는 값, 저장된 값, 적용 중인 값, 실제 현재 값을 구분한다.
+- 조회 실패·미지원·미구현·권한 없음은 서로 다른 상태로 표시한다.
+- 확인하지 못한 codec·품질·bitrate·해상도는 실제 값처럼 채우지 않는다.
 
-- 주 사용자는 페어링한 헤드폰으로 Windows 소리를 듣고 코덱을 선택하려는 사람이다.
-- 한 번에 한 장치·한 스트림만 활성화한다. 다른 장치를 클릭하는 행위만으로 재생을 전환하지 않는다.
-- 요청한 설정과 현재 적용된 설정을 별도로 표시한다. 저장·적용 중·적용 완료를 같은 성공 알림으로 합치지 않는다.
-- 지원 여부를 모르면 확인 중 또는 확인 실패로 표시한다. 미지원으로 단정하지 않는다.
-- 처음 설치한 빌드에 재생 기능이 없으면 준비 상태를 표시하고 연결 버튼을 비활성화한다.
-
-## 2. 화면 지도
-
-기본 화면 왼쪽에는 **오디오 기기 목록**, 아래에는 **진단 · 앱 설정**을 둡니다. 장치를 선택하면 오른쪽에서 즉시 해당 장치의 설정을 편집합니다. 오른쪽 하위 탭은 **오디오 설정 · 연결 · 장치 정보**이며 선택 장치와 현재 적용 요약을 유지합니다. 연결 설정은 별도 창을 열어야 접근할 수 있는 기능으로 숨기지 않습니다.
+## 2. 정보 구조와 화면 지도
 
 ```mermaid
 flowchart LR
-    Launch[앱 열기] --> Ready{구성요소 상태 확인}
-    Ready -->|준비됨| Devices[장치]
-    Ready -->|확인 실패 또는 준비 필요| Setup[준비 안내]
-    Devices --> Detail[선택 장치와 현재 연결]
-    Detail --> Policy[오른쪽 장치 설정]
-    Policy --> Save[희망 설정 저장]
-    Policy --> Apply[저장 후 적용 요청]
-    Apply --> Detail
-    Detail --> Diagnostics[진단]
-    Diagnostics --> Recovery[선택 장치 복구]
-    Devices --> Settings[앱 설정]
-    Tray[시스템 트레이] --> Detail
+    Launch[앱 열기] --> Inventory[Windows Bluetooth 목록 조회]
+    Inventory --> Select[기기 선택 또는 설정]
+    Select --> State[오른쪽 현재 상태와 지원 코덱]
+    State --> Settings[기기별 설정 편집]
+    Settings --> Save[저장만]
+    Settings --> Apply{현재 경로에서 적용 가능}
+    Apply -->|가능| Reconfigure[설정 적용]
+    Apply -->|불가| Explain[저장 가능 범위와 불가 이유]
+    State --> Diagnose[진단과 장치 정보]
+    Inventory --> OS[Windows Bluetooth 설정 열기]
 ```
 
-| 화면 ID | 화면 | 중심 정보 | 주 동작 | 보조 동작 |
-| --- | --- | --- | --- | --- |
-| UI-01 | 준비 안내 | 서비스·오디오 구성요소의 준비 여부와 한 가지 해결 방법 | 다시 확인 | Windows Bluetooth 설정 열기 |
-| UI-02 | 장치 | 왼쪽 기기 목록, 오른쪽 선택 장치와 실제 적용 요약 | 장치 선택 또는 연결 | 연결 끊기, 장치 새로 고침 |
-| UI-03 | 오른쪽 장치 설정 | 코덱·형식·음질·버퍼·연결 동작·미적용 변경 | 저장하고 적용 | 저장만, 변경 취소 |
-| UI-04 | 진단 | 선택 장치의 현재 문제, 마지막 확인 시각, 제한된 지표 | 오류에 맞는 복구 동작 | 진단 보고서 저장 |
-| UI-05 | 앱 설정 | 테마, 창 닫기, 자동 실행, 접근성 관련 시스템 설정 안내 | 변경 항목별 즉시 저장 | 기본값 복원 |
-| UI-06 | 장치 복구 | 대상 장치, 중단되는 연결, 수행 단계와 결과 | 복구 시작 | 실행 전 취소 |
-| UI-07 | 트레이 메뉴 | 활성 장치와 연결 상태 | 앱 열기 | 연결 끊기, 앱 종료 |
+| 화면 ID | 역할 | 기본 동작 |
+| --- | --- | --- |
+| UI-01 준비 상태 | 서비스·version·backend·provider 준비 여부 | 다시 확인, 준비 방법 보기 |
+| UI-02 Bluetooth 목록 | Windows에 알려진 기기, 연결·종류·설정 가용성 | 기기 설정 열기, 검색·필터·새로 고침 |
+| UI-03 기기 설정 | 현재 오디오 상태, 지원 코덱, 편집 form | 설정 적용, 저장만, 변경 취소 |
+| UI-04 진단·장치 정보 | source와 측정 시각, 상세 format, 오류 | 다시 확인, 비식별 보고서 저장 |
+| UI-05 앱 설정·트레이 | 테마·자동 실행·화면 열기 | 앱 설정 변경, 창 열기·닫기 |
+| UI-06 복구 | 검증된 장치별 driver 복구 절차 | 영향 확인 후 별도 실행 |
 
-## 3. 창 구조와 정보 위계
+`설정 / 진단 / 장치 정보`는 오른쪽 panel의 하위 탭입니다. 기기를 바꿔도 가능한 한 탭 위치를 보존합니다. 서비스가 없는 경우에도 전체 화면을 무한 spinner로 막지 않고 확인 가능한 Windows 목록과 준비 안내를 구분합니다.
 
-초기 기준 창은 1,040×760 DIP, 최소 720×640 DIP를 제안합니다. 1,440×1,024 시안은 화면 구성을 검토하기 위한 이미지 크기이며 실제 창 크기를 강제하지 않습니다.
+## 3. 왼쪽 Bluetooth 기기 목록
 
-| 영역 | 구조와 동작 |
+목록은 Windows가 제공하는 현재 known/paired 장치입니다. **앱이 새 radio scan이나 pairing을 시작한 결과처럼 표현하지 않습니다.** 검색은 현재 목록의 이름을 필터링합니다. 미등록 기기는 **Windows Bluetooth 설정**으로 안내합니다.
+
+| 요소 | 동작과 표시 |
 | --- | --- |
-| 제목 영역 | `A2DP for Windows`, 표준 최소화·최대화·닫기. 드래그 영역이 버튼과 겹치지 않음 |
-| 왼쪽 기기 영역 | 기본 240 DIP, 화면 폭에 따라 220~280 DIP. 오디오 기기 목록과 진단·앱 설정 탐색 |
-| 장치 선택 | 이름·아이콘·상태를 한 행에 표현. 한 장치 선택, keyboard arrow 이동 지원. 선택하면 오른쪽의 장치별 draft 표시 |
-| 오른쪽 주 콘텐츠 | 장치 이름·작은 적용 상태 요약 → 하위 탭 → 설정 그룹 → 저장·적용 action 순서. 창의 나머지 폭 사용 |
-| 지속 상태 | 서비스 연결 상실·복구 필요는 지워지는 toast 대신 해당 화면 상단에 유지 |
-| 설정 편집 | 코덱과 형식 / 음질과 안정성 / 연결 동작을 구분. 오른쪽 하단에 저장·적용 action 유지, 본문만 스크롤 |
+| 기기 행 | 이름, 종류, Windows 연결 상태, 설정 가능 여부. 선택된 행은 배경·표식·접근성 selected 상태로 구분 |
+| 설정 action | 오디오 장치의 오른쪽 설정 영역 열기. 연결 action으로 사용하지 않음 |
+| 검색 | plain text 기기 이름 검색. 검색 결과 0건과 목록 조회 실패를 구분 |
+| 필터 | 전체 장치 / 오디오 기기. 기본은 오디오 기기, 전체 목록에서 다른 종류도 확인 가능 |
+| 비오디오 기기 | 이름·Windows 상태와 **오디오 설정 대상 아님**. codec form 비활성 |
+| 새로 고침 | 목록·허용된 상태 조회. driver binding이나 profile 소유권 전환 없음 |
+| Windows 설정 링크 | OS Bluetooth 설정 열기. 앱에서 자동 pairing·disconnect를 수행하지 않음 |
 
-폭이 부족하면 장치 목록과 상세를 한 열의 목록 → 상세 흐름으로 바꿉니다. 현재 연결 요약을 유지하며 선택 장치로 돌아갈 경로를 제공합니다. 200% 텍스트 확대에서도 주요 동작이 가려지지 않도록 콘텐츠를 수직 스크롤하고 버튼 행을 재배치합니다.
+Bluetooth 주소·일련번호를 기본 목록에 노출하지 않습니다. 긴 이름은 행에서 생략할 수 있지만 접근성 이름과 상세에서 전체를 확인할 수 있게 합니다. 배터리·신호 세기는 검증된 provider가 생기기 전에는 표시하지 않습니다.
 
-시각 체계는 의미 기반 token으로 관리합니다: `surface`, `text-primary`, `text-secondary`, `accent`, `success`, `warning`, `error`, `focus`. 기본 시안은 charcoal 배경, 밝은 본문, 낮은 채도의 mint 강조를 사용합니다. 숫자·색상만으로 상태를 구분하지 않습니다. 일반 본문 14~16 DIP, 화면 제목 24~28 DIP, 4/8 DIP 간격 단위를 제안합니다. 한 화면의 강조 동작은 저장하고 적용이며, 항목마다 별도 카드와 그림자를 추가하지 않습니다. 시스템 밝은 theme·고대비에서는 semantic token으로 대체합니다.
-
-## 4. UI-01 준비 안내
-
-앱 진입 시 서비스 연결, API version, driver 준비 상태를 조회합니다. 조회 중에는 장치 목록을 실제 결과처럼 채우지 않습니다.
-
-| 상태 | 문안 | 사용 가능한 동작 |
-| --- | --- | --- |
-| 조회 중 | 연결 준비 상태를 확인하고 있습니다. | 제한된 대기 후 취소 또는 다시 확인 |
-| 서비스 미실행 | 연결 서비스를 사용할 수 없습니다. | 다시 확인, 해결 방법 보기 |
-| 호환 version 불일치 | 앱과 연결 구성요소의 버전이 맞지 않습니다. | 설치된 버전 보기, 닫기 |
-| encoder 미포함 | 이 빌드에는 오디오 전송 기능이 준비되지 않았습니다. | 문서 보기, 진단 정보 보기 |
-| radio 없음/꺼짐 | 사용할 수 있는 Bluetooth 어댑터가 없습니다. | Windows Bluetooth 설정 열기, 다시 확인 |
-| 준비 완료 | 상태 안내 종료, 실제 장치 목록으로 이동 | 장치 선택 |
-
-오디오 구성요소 설치가 구현·검증되기 전에는 가짜 설치·복구 버튼을 제공하지 않습니다. 테스트 서명이나 부팅 보안 변경을 일반 사용자 화면의 자동 해결책으로 넣지 않습니다.
-
-## 5. UI-02 장치와 현재 연결
-
-첫 방문에서는 최근에 사용한 장치를 선택만 합니다. 자동 연결은 기본으로 꺼져 있으며 사용자가 별도로 켠 경우에만 실행합니다. 다른 장치가 이미 활성화되어 있으면 상단에 활성 장치 요약을 보존합니다.
-
-장치 행은 공개 alias 또는 사용자가 알아볼 수 있는 장치 이름, 상태, 지원 확인 결과만 표시합니다. Bluetooth 주소·일련번호는 표시하지 않습니다. 배터리와 신호 세기는 신뢰할 수 있는 실제 측정 API가 구현되기 전에는 표시하지 않습니다.
-
-| 장치 목록 상태 | 화면 처리 |
+| 목록 상태 | UI 처리 |
 | --- | --- |
-| 아직 페어링한 장치 없음 | 빈 상태 문안과 Windows Bluetooth 설정 열기 |
-| 목록 불러오기 실패 | 오류 문안과 다시 시도. 빈 목록으로 교체하지 않음 |
-| 장치 있음, capability 확인 중 | 연결 비활성 + 지원 확인 중 |
-| 조회 성공, 공통 codec 없음 | 연결 비활성 + 사용할 수 있는 공통 코덱 없음 |
-| 준비 완료 | 사용자가 선택한 정책으로 연결 가능 |
-| 장치가 사라짐 | 해당 상태 표시, 최신 장치 목록 유지, 반복 연결 금지 |
+| 최초 조회 중 | skeleton과 조회 중 안내. 예시 장치로 채우지 않음 |
+| 등록된 장치 없음 | 빈 목록과 Windows 설정 열기 |
+| 필터 결과 없음 | 검색·필터 초기화 |
+| 조회 실패 | 오류·다시 확인. 기존 목록은 마지막 조회값임을 표시 |
+| 페어링됨, 미연결 | 설정 보기·가능한 희망 설정 저장. 현재 적용은 불가 |
+| Windows 연결됨 | 연결 사실만 표시. codec·stream이 확인된 것으로 간주하지 않음 |
 
-선택 장치 화면의 실제 적용값은 `active` snapshot을 사용합니다. `active`가 없으면 `연결 후 표시` 또는 현재 상태에 맞는 문구를 표시합니다. SBC, 샘플레이트, 성공 배지는 기본값으로 미리 채우지 않습니다.
+다른 장치를 선택하는 행위는 **설정 대상 전환**입니다. 현재 오디오 출력 장치의 전환이 아닙니다. 편집 중인 draft가 있으면 **계속 편집 / 변경 버리기**를 확인하고 다른 장치에 값을 복사하지 않습니다.
 
-다른 장치가 활성일 때는 **이 장치로 전환**을 표시합니다. 클릭하면 “현재 장치의 오디오가 중단되고 선택한 장치에 연결됩니다”라는 대상 이름이 포함된 확인을 제공합니다. 승인 후 Stop 완료를 확인하고 새 Connect를 보냅니다. 취소하면 기존 연결과 설정을 유지합니다.
+## 4. 오른쪽 상단: 상태와 지원 코덱
 
-## 6. 세션 상태와 UI 대응
+선택 기기 이름 바로 아래에 **Windows 상태**와 **앱 오디오 상태**를 각각 표시합니다. 예: `Windows 연결됨` + `앱 오디오 전송 중`, 또는 `Windows 연결됨` + `현재 codec 확인 불가`.
 
-아래 상태는 [서비스 수명주기](interfaces.md)의 관찰 결과로 결정합니다. 화면의 spinner나 animation 종료가 실제 상태를 바꾸지 않습니다.
+지원 codec은 세 가지 관점으로 읽을 수 있어야 합니다.
 
-| 서비스 상태/상황 | UI 문안 | 중심 동작 | 설정 편집·주의점 |
-| --- | --- | --- | --- |
-| Idle | 연결 안 됨 | 연결 | capability가 완료된 항목만 편집 |
-| Discovering | 장치 지원을 확인하고 있습니다 | 취소 | 중복 Connect 금지 |
-| Configuring | 연결 설정을 적용하고 있습니다 | 취소 | proposed 표시, active로 승격 금지 |
-| Open | 오디오 연결을 준비하고 있습니다 | 취소 | peer Start 확인 전 전송 중 표시 금지 |
-| Streaming | 오디오 전송 중 | 연결 설정 | 실제 codec·format 표시, 연결 끊기 제공 |
-| Suspended | 오디오 전송 일시 중지 | 연결 상태 다시 확인 | 이전 값을 현재 active로 표시하지 않음 |
-| Stopping | 연결을 종료하고 있습니다 | 진행 상태 보기 | 중복 Stop은 같은 요청 상태를 관찰 |
-| RecoveryRequired | 연결을 복구해야 합니다 | 복구 방법 보기 | 무한 자동 재연결 금지 |
-| 서비스 연결 상실 | 현재 연결 상태를 확인할 수 없습니다 | 다시 확인 | 마지막 확인값을 과거값으로 명시, 제어 비활성 |
-| 설정 저장 성공·적용 실패 | 설정은 저장했지만 연결에 적용하지 못했습니다 | 다시 적용 또는 연결 설정 | desired와 active를 구분 |
-
-연결 중에는 진행 단계 이름을 보여주며 근거 없는 진행률을 만들지 않습니다. retry budget과 deadline은 서비스가 관리합니다. UI가 별도 timer로 새로운 Connect를 무한 생성하지 않습니다.
-
-## 7. UI-03 오른쪽 장치 설정
-
-오른쪽 기본 화면에서 코덱과 형식, 음질과 안정성, 연결 동작을 함께 편집합니다. 왼쪽에서 선택한 장치에만 적용되며, 다른 장치의 설정을 공통 기본값으로 덮어쓰지 않습니다. 현재 적용값은 상단에 작게 유지하고 큰 codec 이름만으로 본문을 채우지 않습니다.
-
-### 설정 control 목록
-
-| 그룹 | 항목 | control | 활성 조건·의미 |
-| --- | --- | --- | --- |
-| 코덱과 형식 | 선호 코덱 | dropdown | 공통 지원과 이 빌드의 활성 backend가 확인된 후보. 미지원 이유는 목록 안에 표시 |
-| 코덱과 형식 | 샘플레이트 | dropdown | `자동`과 codec·peer·PCM 경로가 함께 지원하는 값. 임의 resampling을 약속하지 않음 |
-| 코덱과 형식 | 채널 | dropdown 또는 읽기 전용 | stereo 하나만 가능하면 고정값과 이유 표시. codec별 실제 허용값만 사용 |
-| 음질과 안정성 | 비트레이트 | 자동/고정 dropdown + 지원값 선택 | 선택 codec의 bitrate control이 구현된 경우만. 자동은 backend가 적응 동작을 지원할 때만 제공 |
-| 음질과 안정성 | 품질 프리셋 | 안정성 / 균형 / 음질 segmented control | backend가 정의한 검증된 설정 묶음. 임의로 codec 순서를 바꾸거나 지연·음질을 보장하지 않음 |
-| 음질과 안정성 | 오디오 버퍼 | 자동(권장) / 지원 profile dropdown | pipeline이 제공하는 범위 안에서만 선택. 값을 늘릴 때 지연 증가 가능성 안내 |
-| 연결 동작 | 공통 코덱이 없으면 SBC 사용 | toggle | 기본 꺼짐. SBC를 이미 선택했으면 비활성화하고 이유 표시 |
-| 연결 동작 | 장치가 다시 나타나면 자동 연결 | toggle | 기본 꺼짐. 해당 장치에 한정, 사용자 Stop·앱 종료가 현재 재시도 예약보다 우선 |
-| 고급 설정 | codec 전용 parameter | 펼침 영역의 검증된 control | 예: SBC bitpool. 해당 encoder와 peer 범위가 확인된 경우에만 노출 |
-
-프리셋은 유효한 parameter 묶음을 draft에 적용하는 편의 기능입니다. 수동으로 구성값을 바꾸면 **사용자 설정**으로 표시하며 프리셋 이름과 실제 값이 서로 어긋나지 않게 합니다. `자동` mode가 선택되면 고정값 control은 비활성화하고 이전 수동 입력은 mode가 다시 바뀔 때만 복원합니다.
-
-bitrate·buffer의 고정 숫자 목록을 모든 codec과 장치에 공통 적용하지 않습니다. 서비스 capability가 허용값, min/max/step, readonly 여부, 재연결 필요 여부를 전달해야 합니다. backend가 준비되지 않은 기능은 **이 빌드에서 준비 중**으로 구분하고 작동하는 것처럼 slider를 제공하지 않습니다.
-
-`연결` 탭은 재연결 설정과 현재 오류의 다음 행동, `장치 정보` 탭은 읽기 전용 장치 지원 형식·앱/driver version·현재 적용 상세를 다룹니다. 앱 전체 테마·자동 실행은 왼쪽 **앱 설정**에 둡니다. 장치의 ANC·마이크·EQ 등 별도 제어 프로토콜이 필요한 항목은 이 설정 화면에 추가하지 않습니다.
-
-### 코덱 가용성
-
-지원 후보 전체 목록은 정보를 제공하되 미구현 항목은 선택 불가 이유를 곁에 표시합니다.
-
-| codec 행 상태 | 표시 | 선택 가능 |
-| --- | --- | --- |
-| local·remote·정책 검증 완료 | 사용 가능 | 가능 |
-| local backend 미포함 | 이 빌드에서 준비 중 | 불가 |
-| capability 조회 미완료 | 장치 지원 확인 중 | 불가 |
-| 조회 성공, remote 미지원 | 이 장치에서 지원하지 않음 | 불가 |
-| 상세 format 교집합 없음 | 공통 오디오 형식 없음 | 불가 |
-| 배포 정책에 따른 비활성 | 이 빌드에서 제공되지 않음 | 불가, 권리 계약 상세는 개발 문서에서 관리 |
-
-미지원 이유는 hover tooltip에만 숨기지 않고 행 설명과 접근성 description에 포함합니다. 선호 codec이 SBC이면 SBC 대체 option은 중복 의미가 생기므로 숨기거나 “이미 SBC를 선택했습니다”로 비활성화합니다.
-
-SBC 대체는 선호 codec 교집합이 없을 때만 후보 정책에 사용합니다. radio 끊김·권한 오류·driver 오류·encoder crash를 SBC로 재시도하는 일반 복구 스위치가 아닙니다. 기본값은 꺼짐입니다.
-
-### 설정 저장과 적용의 일관성
-
-UI의 장치별 `draft`는 저장된 `desired`와 별도로 유지합니다. 현재 출력은 `active`로만 표시합니다. 장치 선택을 바꿀 때 저장하지 않은 변경이 있으면 계속 편집 / 변경 버리기를 먼저 확인하며, 확인되지 않은 draft를 다음 장치에 복사하지 않습니다.
-
-| 동작 | 계약 |
+| 표시 | 내용 |
 | --- | --- |
-| codec·형식 변경 | draft만 변경. 장치 통신·재연결·disk write는 아직 하지 않음 |
-| 취소 | draft 폐기, 기존 desired·active 보존 |
-| 저장만 | version 검증 후 desired 저장. 현재 스트림은 유지 |
-| 저장하고 적용 | desired 저장 성공 후 명시적 ApplyPolicy. 재연결 필요 시 오디오 중단 안내 |
-| 저장 실패 | desired·active를 유지하고 form 안에 오류 표시. 적용 요청은 보내지 않음 |
-| 저장 성공·적용 실패 | 저장 여부와 현재 출력을 각각 표시. 실패를 저장 rollback으로 숨기지 않음 |
-| capability/generation 변경 | draft는 보존하고 적용 비활성, 새 정보와 차이를 확인하게 함 |
+| 장치 지원 코덱 | 실제 peer capability로 확인한 목록. unknown·이전 확인값은 명시 |
+| 앱에서 사용 가능 | 이 빌드·현재 route·PCM 경로에서 적용 가능한 교집합 |
+| codec별 불가 이유 | 앱 미구현, 장치 미지원, 공통 format 없음, 현재 경로에서 설정 불가 |
 
-변경 내용을 저장하지 않고 화면을 나가면 **계속 편집 / 변경 버리기**를 제공합니다. 설정 차이가 없으면 확인을 띄우지 않습니다. 저장만 수행한 뒤에는 “다음 연결부터 사용” 상태를 표시합니다.
+SBC·AAC·LDAC·aptX·aptX HD·aptX Low Latency는 프로젝트의 목표 identity입니다. 목록에 이름이 있다는 이유만으로 모두 지원한다고 표시하지 않습니다. 장치 지원 badge를 누르면 가용성 설명을 보여줄 수 있지만 즉시 codec을 변경하지 않습니다.
 
-codec 변경에 재연결이 필요하면 대상 장치, 기존 codec → 요청 codec, 오디오 중단 가능성을 실행 전에 보여줍니다. 적용 성공 toast는 peer accept와 서비스 snapshot 갱신이 모두 확인된 뒤 짧게 표시하고, 실제 출력값은 화면에 계속 남깁니다.
+### 현재 오디오 상태
 
-## 8. UI-04 진단과 UI-06 복구
+읽기 전용 3열×2행을 기본으로 하며 좁은 창에서는 2열 또는 1열로 배치합니다. 큰 codec 이름 하나가 본문을 차지하지 않게 합니다.
 
-일반 사용자 화면은 **현재 문제 → 할 수 있는 다음 행동** 순서입니다. 기술 지표는 상세 연결 정보에서 펼칩니다. 값이 없으면 `확인할 수 없음`, 측정 중이면 `측정 중`으로 표시하며 0으로 대체하지 않습니다.
-
-| 문제 | 문안 예시 | 다음 행동 |
+| 항목 | 표시 예 | 의미 |
 | --- | --- | --- |
-| capability 조회 실패 | 장치의 지원 코덱을 확인하지 못했습니다. | 다시 확인 |
-| 공통 codec 없음 | 이 장치와 사용할 수 있는 코덱이 없습니다. | 연결 설정 보기 |
-| 설정 거절 | 장치가 이 연결 설정을 받아들이지 않았습니다. | 설정 바꾸기 |
-| 연결 단절 | 장치와 연결이 끊어졌습니다. | 서비스가 허용하는 경우 다시 연결 |
-| 반복 timeout | 정해진 시간 안에 연결을 완료하지 못했습니다. | 장치·Bluetooth 상태 확인, 진단 보고서 저장 |
-| driver 복구 필요 | 오디오 연결을 복구해야 합니다. | 선택 장치 복구 안내 |
+| 코덱 유형 | SBC | 현재 accept된 codec identity |
+| 채널 모드 | Joint Stereo | 실제 codec coding mode, PCM channel count와 구분 |
+| 샘플링 주파수 | 48 kHz | 현재 codec의 sampling frequency |
+| 입력 PCM 해상도 | 16 bit PCM | encoder 입력의 valid bits와 sample kind |
+| 전송률 | 328 kbps | 오디오 payload의 앱 측 완료 기준, 유효 시간 window의 평균 |
+| 품질 설정 | 균형 / 자동·현재 표준 / 사용자 설정 | encoder active preset·mode, 청감 품질 점수 아님 |
 
-진단 보고서는 사용자가 내용을 미리 보고 **로컬 파일로 저장**하도록 합니다. 자동 업로드를 하지 않습니다. build·OS version·codec·상태 전이·비식별 오류만 기본 포함하고 원시 오디오, 장치 주소, 일련번호, dump는 포함하지 않습니다.
+위 값은 표시 형식의 예입니다. [상태 계약](device-status.md)에 정의한 source가 없으면 **확인 불가**, 대기 상태면 **재생 대기**, 늦은 값이면 **마지막 확인값**을 사용합니다. 상세 popover에서 provider·관찰 시각·유효성, PCM container bits, 목표 bitrate와 관측 bitrate를 구분합니다.
 
-복구 화면에는 선택 장치의 현재 연결 중단, 기본 Windows 오디오로 돌아가는 영향, 관리자 권한이 필요한 시점을 먼저 표시합니다. 실제 구현된 복구 경로만 실행합니다. 복구 시작 전에는 취소 가능하고, 수행 중에는 현재 단계·완료 여부를 사실대로 보여줍니다. 기본 driver binding과 재생 확인 전에는 “복구 완료”를 표시하지 않습니다.
+## 5. 기기별 설정과 적절한 선택지
 
-## 9. UI-05 앱 설정과 UI-07 트레이
+설정에는 유효한 enum·범위·step만 제공합니다. 비활성 이유는 tooltip에만 숨기지 않고 form 설명과 접근성 description에 포함합니다.
 
-초기 설정은 **시스템 테마 사용, Windows 시작 시 자동 실행 꺼짐, 장치 자동 연결 꺼짐**입니다. 지원하지 않는 기능은 준비 중으로 장식하지 않고 설정에서 제외합니다.
-
-닫기 버튼은 창만 닫고 현재 연결을 유지하는 동작으로 설계합니다. 첫 실행의 간단한 안내와 설정에서 이 동작을 설명하며 트레이에서 앱을 다시 열 수 있게 합니다. **앱 종료**는 연결 중이면 중단 여부를 확인하고 Stop 완료 후 UI를 종료합니다. 서비스는 OS 구성요소로 대기할 수 있지만 명시적 종료 후에는 자동 재연결을 예약하지 않습니다.
-
-트레이 메뉴는 상태 요약, 앱 열기, 연결 끊기, 앱 종료만 제공합니다. codec의 고급 변경과 driver 복구는 전체 화면에서 수행합니다. 아이콘 색만으로 연결·오류를 표현하지 않고 tooltip·접근성 이름에 현재 상태를 포함합니다.
-
-## 10. UI와 서비스 연결 계약
-
-UI는 무권한 클라이언트이며 local IPC로만 요청합니다. driver handle·주소·관리자 명령을 직접 다루지 않습니다. device alias → 내부 ID의 변환과 권한 검사는 서비스가 담당합니다.
-
-| 사용자 행동 | 서비스 명령/데이터 | UI 불변식 |
+| 그룹 | 항목 | 선택지와 조건 |
 | --- | --- | --- |
-| 장치 열기/갱신 | ListDevices, GetCapabilities | 조회 실패를 빈 결과로 간주하지 않음 |
-| 연결 상태 보기 | GetSession | 한 snapshot의 generation·active·reason을 함께 사용 |
-| 희망 설정 저장 | SavePolicy, expected policy revision | 동시 수정 시 덮어쓰지 않고 재조회 |
-| 저장된 설정 적용 | ApplyPolicy, saved policy revision, generation | 저장 성공 여부와 적용 성공 여부 구분 |
-| 연결/끊기 | Connect / Stop + request ID | 단일 명령 진행 상태, 중복 클릭 멱등 처리 |
-| 진단 저장 | ExportDiagnostics | 비식별화 결과 preview 후 사용자 경로 저장 |
+| 코덱과 형식 | 선호 codec | 검증된 후보. 미지원 이름은 이유와 함께 확인 가능, 강제 적용 불가 |
+| 코덱과 형식 | 스테레오 모드 | 자동 또는 codec-specific mode. SBC는 Mono / Dual Channel / Stereo / Joint Stereo의 실제 교집합 |
+| 코덱과 형식 | 샘플링 주파수 | 자동 또는 local·peer·PCM 경로가 지원하는 Hz 값. 44.1/48/96 kHz를 모든 codec에 공통 제공하지 않음 |
+| 코덱과 형식 | 입력 PCM 해상도 | local PCM/encoder가 함께 지원하는 sample format. 예: 16-bit PCM, 24-bit PCM, 32-bit float. 미구현 변환을 약속하지 않음 |
+| 품질과 안정성 | 품질 preset | backend가 정의한 안정성 / 균형 / 음질 또는 codec 고유 mode. 실제 parameter 묶음으로 전개 |
+| 품질과 안정성 | 목표 bitrate | encoder가 제공할 때만 자동/고정과 허용값. 현재 전송률과 별도 |
+| 품질과 안정성 | 오디오 버퍼 | 자동(권장) 또는 검증된 pipeline profile. 지연 증가 가능성 안내 |
+| 고급 설정 | codec 전용 parameter | 예: SBC bitpool. mode·sample rate 변경 후 범위와 frame 길이 재검증 |
+| 호환 정책 | 공통 codec이 없으면 SBC 사용 | 명시적 opt-in. SBC 자체를 선택했으면 비활성·이유 표시 |
 
-UI 입력 검증과 별도로 서비스가 같은 값·version·권한을 다시 검증합니다. 결과에는 request ID와 generation을 포함합니다. 이전 장치의 늦은 응답으로 현재 상세 화면을 덮어쓰지 않습니다. event stream 도입 전에는 화면이 보일 때 1초 간격 상태 조회를 제안하며 직전 조회가 끝나지 않으면 겹쳐 보내지 않습니다. 실제 주기는 부하·전원 시험으로 조정합니다.
+**스테레오 모드**는 일반적인 좌우 음량·공간 음향 설정이 아닙니다. 단일 coding mode만 가능하면 readonly로 표시합니다. SBC의 Joint Stereo를 다른 codec에 공통 옵션으로 넣지 않습니다. PCM mono/stereo channel count가 필요하면 codec mode와 별도 field로 검증합니다.
 
-서비스별 상태 모델과 접근성 tree를 분리한 presentation layer를 둡니다. framework 선택은 native window·UI Automation·DPI·트레이·배포 크기·Rust IPC 검증 결과로 확정하며, 시각 시안이 driver 구조나 runtime을 결정하지 않습니다.
+품질 preset 적용 후 사용자가 bitpool·bitrate를 바꾸면 **사용자 설정**으로 전환합니다. 자동 mode에서 고정값은 활성값으로 해석하지 않습니다. capability가 바뀌어 draft가 유효하지 않으면 무엇이 달라졌는지 설명하고 적용을 막습니다. ANC·EQ·마이크처럼 별도 device protocol이 필요한 기능은 제공하지 않습니다.
 
-## 11. 키보드·접근성·DPI
+## 6. 저장과 적용
 
-- Tab 순서: 탐색 → 장치 선택 → 주 콘텐츠 control → 주 동작 → 보조 동작. List/RadioGroup 내부는 방향키, 활성화는 Enter/Space를 사용한다.
-- Escape는 현재 dialog·편집 취소만 담당한다. 재생을 바로 중단하는 단축키로 사용하지 않는다.
-- `Ctrl+,`는 앱 설정, `F5`는 현재 조회 갱신으로 제안한다. 비활성 동작을 단축키로 우회하지 못하게 한다.
-- 모든 control에 이름·role·value·disabled reason을 노출한다. async 상태가 바뀌어도 키보드 focus를 임의 이동하지 않는다.
-- 상태 오류는 text와 icon을 함께 사용한다. 중요 오류는 polite/live 알림과 지속 문안으로 전달하며 매초 통계 변화는 읽어주지 않는다.
-- 일반 텍스트 대비 4.5:1 이상, 큰 텍스트 3:1 이상을 목표로 검증한다. Windows 고대비 theme, 텍스트 200%, DPI 100/125/150/200%를 확인한다.
-- 주요 click target은 40 DIP 이상을 제안한다. window resize와 긴 장치 이름에서 버튼이 겹치거나 잘리지 않게 한다.
-- 장치 이름은 plain text로 처리하고 최대 표시 길이를 제한한다. 전문은 접근성 description과 명시적인 상세 보기에서 읽을 수 있게 한다.
-- 움직임 감소 설정을 따르고 spinner 외의 장식 animation은 넣지 않는다. 연결 성공을 animation만으로 전달하지 않는다.
-
-공식 기준: [Windows 접근성](https://learn.microsoft.com/en-us/windows/apps/develop/accessibility), [접근성 점검](https://learn.microsoft.com/en-us/windows/apps/design/accessibility/accessibility-checklist), [키보드 상호작용](https://learn.microsoft.com/en-us/windows/apps/develop/input/keyboard-interactions).
-
-## 12. UI 수용 기준
-
-| 검증 ID | 시나리오 | 기대 결과 |
+| 사용자 행동 | 동작 | 현재 오디오에 미치는 영향 |
 | --- | --- | --- |
-| UX-01 | 첫 실행, encoder 없음 | 상태 안내, 연결 불가 이유, 활성 codec 표시 없음 |
-| UX-02 | 장치 없음 vs 목록 조회 실패 | 다른 문안·다음 행동, 실패 시 기존 목록 보존 |
-| UX-03 | 선택 장치 변경 중 다른 장치 재생 | 보기만 전환, 실제 재생은 명시적 전환 전까지 유지 |
-| UX-04 | 지원 미확인·미지원 codec | 원인을 읽을 수 있고 선택·단축키 적용 모두 불가 |
-| UX-05 | 희망 LDAC, 허용된 SBC 사용 | 요청값과 실제 SBC 및 이유가 동시에 보임 |
-| UX-06 | 저장 성공, 적용 실패 | 저장 사실과 이전/중단된 active 상태를 각각 표시 |
-| UX-07 | 적용 중 장치 제거·stale 응답 | 과거 응답 무시, 새 상태 표시, 버튼 무한 잠금 없음 |
-| UX-08 | 연결 중 Stop·창 닫기·종료 | 각각 정의된 동작, 중복 요청·자동 재연결 재생성 없음 |
-| UX-09 | keyboard/Narrator만으로 연결 설정 | 모든 핵심 동작과 불가 이유 접근 가능 |
-| UX-10 | 작은 창·고대비·200% text | 주요 버튼, 상태, 오류 문안 가림 없음 |
-| UX-11 | 진단 내보내기 취소/성공 | 취소 시 전송 없음, 성공 시 사용자가 고른 로컬 파일만 생성 |
-| UX-12 | driver 복구 실패 | 성공 문구 없음, 해당 단계와 다음 행동 유지 |
-| UX-13 | 왼쪽 기기 선택, 오른쪽 설정 변경 | 선택한 장치의 control·draft·현재값만 갱신, 다른 장치 설정 보존 |
-| UX-14 | codec 전환·자동 bitrate·프리셋 수동 변경 | capability에 맞춰 control 재구성, 모순된 고정값·preset·미지원 parameter 저장 차단 |
+| 설정 열기·field 변경 | device별 draft 편집 | 없음 |
+| 변경 취소 | draft 폐기 | 없음 |
+| 저장만 | local schema/backend 검증 후 desired revision 저장. remote 미확인 값은 pending | 현재 active 유지 |
+| 설정 적용 | 저장 후 해당 revision에 대한 ApplyPolicy | ProjectDriver가 소유한 경로에서만 설정·재구성. 필요 시 미리 알린 media 중단 |
+| Windows 설정 열기 | OS 설정 화면 열기 | 앱에서 직접 pairing·연결·해제하지 않음 |
+| 창 닫기·앱 종료 | 설정 클라이언트 종료 | stream과 Bluetooth 연결 유지. service 종료·driver 제거와 구분 |
 
-시안 이미지는 레이아웃·시각적 위계를 검토하는 자료입니다. 버튼 상호작용, 키보드, Narrator, 고대비·DPI와 실제 service 연동은 UI 구현 후 검증합니다.
+저장 실패면 적용 요청을 보내지 않습니다. 저장 성공·적용 실패면 **설정은 저장했지만 적용하지 못했습니다**라고 표시하고 실제 active 값을 계속 확인합니다. WindowsDefault 또는 owner가 unknown이면 **현재 경로에서 적용할 수 없음**을 설명합니다. 사용자 모르게 driver를 바꾸거나 Windows 연결을 재생성하지 않습니다.
+
+적용에 media 재시작이 필요하면 `기기 / 이전 → 요청 설정 / 오디오가 잠시 중단될 수 있음`을 보여줍니다. 단순 입력·저장에는 확인 dialog를 띄우지 않습니다. 성공은 적용된 revision·format의 service 응답으로 결정하며 UI animation으로 결정하지 않습니다.
+
+stream이 없을 때 설정을 준비한 결과는 **다음 재생에 적용할 설정 준비됨**이며, 재생 중에 활성화한 결과와 구분합니다. OS audio client의 stream demand 없이 미디어 재생을 시작하지 않습니다.
+
+## 7. loading·오류·상태 전이
+
+| 관찰 상태 | UI | 허용 동작 |
+| --- | --- | --- |
+| 서비스 초기 조회 | 준비 상태 확인 중 | Windows 목록 보기, 유한 재시도 |
+| backend 없음 | 이 빌드에는 오디오 전송 기능이 준비되지 않았습니다 | 문서·diagnostics, 실제 값 표시 없음 |
+| Bluetooth 미연결 | Windows에서 연결한 뒤 현재 설정을 적용할 수 있습니다 | 설정 보기, 가능한 pending 저장, Windows 설정 열기 |
+| WindowsDefault | 기본 Windows 경로, 확인 가능한 정보만 표시 | 설정 조회·pending 저장, 적용 불가 이유 |
+| ProjectDriver Idle/Open | 재생 대기 / 다음 재생 설정 준비됨 | 유효한 설정 저장·준비 |
+| Configuring | 설정 적용 중 | 같은 request의 진행 상태, 중복 적용 차단 |
+| Streaming | 앱 오디오 전송 중 | 실제 상태 표시·설정 변경 |
+| Suspended | 앱 오디오 일시 중지 | 실제 상태 확인, 과거 전송률을 현재 값으로 사용하지 않음 |
+| Stopping | 앱 stream 정리 중 | 조회 가능, global disconnect로 표시하지 않음 |
+| RecoveryRequired | 오디오 경로 복구 필요 | 검증된 복구 방법 보기 |
+| provider 연결 상실 | 현재 오디오 상태 확인 불가 | 다시 확인, stale 표시, 제어 차단 |
+
+클라이언트는 request ID·generation·format revision을 비교해 늦은 결과를 버립니다. 입력 오류는 해당 field에, 적용 오류는 저장/적용 영역에, provider 오류는 상태 영역에 표시합니다. 중요한 상태는 사라지는 toast에만 남기지 않습니다.
+
+## 8. 진단·복구·앱 설정
+
+진단은 현재 문제와 다음 행동을 먼저 제시합니다. detailed format·counter·관찰 provenance는 펼쳐서 확인합니다. 보고서는 preview 후 사용자가 고른 로컬 파일로만 저장하고, 원시 오디오·주소·일련번호·dump는 기본에서 제외합니다.
+
+복구는 설정 적용과 분리합니다. 선택한 device의 driver binding과 현재 오디오에 미치는 영향, 관리자 권한이 필요한 시점을 보여줍니다. 구현·검증된 복구 기능만 노출하고 실제 기본 오디오 복귀 확인 전에는 성공으로 표시하지 않습니다. TESTSIGNING·Secure Boot를 일반 사용자 자동 해결책에 포함하지 않습니다.
+
+앱 설정의 초기값은 시스템 theme, 자동 실행 꺼짐입니다. 트레이는 앱 열기, 현재 상태 요약, 앱 종료를 제공합니다. **앱 종료는 설정 UI만 종료하며 재생 중인 audio와 Windows 연결을 유지합니다.** service lifecycle은 Windows audio endpoint의 demand와 PnP·전원 events가 소유합니다.
+
+## 9. 폰트·밀도·색상
+
+| 항목 | 기본 설계값 | 목적 |
+| --- | --- | --- |
+| font family | Windows의 Segoe UI Variable Text / Segoe UI, 한글은 설치된 맑은 고딕 fallback | OS와 일관된 문자, 별도 font download·재배포 없음 |
+| 본문·control | 14~16 DIP, regular 400, 중요 label 600 | 읽을 수 있는 밀도 |
+| caption | 12~13 DIP, 보조 설명에 한정 | 상태값·필수 action을 작은 글자로 숨기지 않음 |
+| 기기 제목 | 26~28 DIP, semibold | 큰 codec poster 대신 선택 기기 구분 |
+| 현재 상태 숫자 | 20~22 DIP, tabular digits | 값 변경 시 폭 흔들림 최소화 |
+| 간격 | 4/8 DIP 단위, 그룹 사이 20~24 DIP | card 남발 없이 정보 구분 |
+| 배경 / 입력 surface | `#1B2024` / `#252C31` | 어두운 중성 surface |
+| 본문 / 보조 text | `#EEF2F4` / `#B4BEC5` | 상태·설명 가독성 |
+| accent | `#A0E8CD`, 버튼 text `#10231B` | 설정 적용과 선택 상태 |
+| focus | 2 DIP 이상의 명확한 focus ring | keyboard 위치 확인 |
+
+지정한 sRGB token을 상대 휘도로 계산하면 입력 surface 위 본문은 약 12.57:1, 보조 text는 7.49:1, accent 버튼 text는 11.67:1입니다. 이는 고정 색상 쌍의 계산이며 실제 control의 opacity·disabled/focus 상태·고대비 렌더링 검증을 대신하지 않습니다.
+
+초기 창 1,120×820 DIP, 최소 760×640 DIP를 제안합니다. 왼쪽 목록은 240~280 DIP, 나머지는 오른쪽 설정입니다. 3열 상태 grid와 2열 form은 좁아지면 줄 수를 늘립니다. 본문은 스크롤하고 저장·적용 영역은 문안을 가리지 않는 하단에 둡니다. 200% text에서 sticky 영역이 과도하게 커지면 일반 문서 흐름으로 전환합니다.
+
+시스템 밝은 theme·고대비는 semantic token으로 대응하며 고정 RGB를 강제하지 않습니다. 선택·오류·연결 상태는 색상 외 text·icon·accessible state를 함께 사용합니다. 과한 gradient·glow·입체효과와 장식 animation은 넣지 않습니다.
+
+## 10. 키보드·접근성
+
+- Tab: 목록 검색·filter → 기기 list → 설정/진단 탭 → form → 설정 적용·저장만·취소. list/radio group 내부는 방향키.
+- Enter/Space는 focus된 control만 실행한다. Escape는 dialog·draft 취소에 쓰며 Bluetooth 해제나 오디오 중단을 실행하지 않는다.
+- Ctrl+,는 앱 설정, F5는 현재 목록·상태 조회. 비활성 설정을 단축키로 우회하지 않는다.
+- 이름·role·value·readonly·불가 이유를 UI Automation에 노출한다. 상태 갱신으로 focus를 이동하지 않는다.
+- 측정 전송률의 매초 변화는 screen reader로 반복 낭독하지 않는다. codec 변경·적용 완료·오류만 필요한 알림을 제공한다.
+- 정상 text 대비 4.5:1, 큰 text 3:1 이상을 목표로 실제 구현에서 확인한다. 고대비, DPI 100/125/150/200%, text 200%, keyboard·Narrator 사용을 검증한다.
+
+공식 기준: [접근성](https://learn.microsoft.com/en-us/windows/apps/develop/accessibility), [점검표](https://learn.microsoft.com/en-us/windows/apps/design/accessibility/accessibility-checklist), [keyboard](https://learn.microsoft.com/en-us/windows/apps/develop/input/keyboard-interactions).
+
+## 11. UI 수용 기준
+
+| ID | 상황 | 기대 결과 |
+| --- | --- | --- |
+| UX-01 | 이미 Windows에서 연결한 기기 선택 | 설정 panel 표시, pairing/connect/disconnect 호출 없음 |
+| UX-02 | Bluetooth 목록·검색·전체/오디오 filter | 오디오 대상 구분, 비오디오 기기 codec 설정 불가 |
+| UX-03 | peer capability unknown·stale·known | 지원 codec 구분, unknown을 미지원으로 치환하지 않음 |
+| UX-04 | 장치 지원 codec과 앱 backend 불일치 | 장치 지원과 사용 가능 목록을 구분, 불가 이유 표시 |
+| UX-05 | ProjectDriver가 실제 오디오 전송 | 6개 상태값과 source·단위가 일관된 snapshot에서 표시 |
+| UX-06 | WindowsDefault에 검증된 codec provider 없음 | 확인 불가 표시, PCM 정보를 codec 정보로 대체하지 않음 |
+| UX-07 | 24 valid bits / 32 container, float | 유효 해상도·container·sample kind를 혼동하지 않음 |
+| UX-08 | bitrate 목표·실측·첫 window·counter reset | 서로 다른 항목, 무효 측정은 0이나 목표값으로 채우지 않음 |
+| UX-09 | SBC/LDAC/AAC 전환·stereo mode 변경 | codec별 교집합만 선택, Joint Stereo를 보편 옵션으로 쓰지 않음 |
+| UX-10 | preset 수동 변경·자동 bitrate | custom 상태와 유효한 활성값, 숨은 field 우회 불가 |
+| UX-11 | 저장 성공·적용 실패 | desired와 active 분리, 명확한 부분 성공 문안 |
+| UX-12 | 경로 소유권·capability·generation 변경 | stale 적용 거부, draft 보존, binding 자동 변경 없음 |
+| UX-13 | 기기 선택 변경·UI 닫기·종료 | 다른 device 설정·Windows 연결·현재 오디오 유지 |
+| UX-14 | keyboard·Narrator·고대비·200% text | 상태·불가 이유·모든 핵심 설정 접근 가능, 가림 없음 |
+| UX-15 | 실측 갱신 지연 3초 초과 | stale 표시, 과거값을 live 값으로 유지하지 않음 |
+| UX-16 | 진단 저장·복구 실패 | 비식별 local export, 실제 복구 확인 전 성공 표시 없음 |
+
+이미지는 배치와 문체를 검토하는 시안입니다. 클릭·keyboard·screen reader·실기 telemetry 검증은 UI와 provider 구현 후 수행합니다.

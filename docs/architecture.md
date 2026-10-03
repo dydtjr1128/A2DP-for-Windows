@@ -38,6 +38,12 @@ flowchart TB
 
 현재 구현은 `crates/a2dp-core`의 codec identity·후보 선택 정책에 한정됩니다. 표의 나머지 경로는 계획입니다. 초기부터 빈 crate와 가짜 driver를 모두 생성하지 않습니다. 각 기능이 검증 가능한 단위가 될 때 디렉터리와 빌드를 추가합니다. 드라이버 workspace는 일반 Rust workspace와 분리하며 WDK·panic·linker 설정이 일반 코드에 전파되지 않게 합니다.
 
+## Windows 연결과 앱 설정의 소유권
+
+pairing·radio·Windows Bluetooth 연결은 OS가 담당합니다. UI는 이미 등록·연결된 기기의 설정을 열고 희망 설정을 저장·적용합니다. UI의 기기 선택, 창 닫기와 앱 종료는 현재 재생·Windows 연결·기본 출력 장치를 바꾸지 않습니다.
+
+WindowsDefault와 ProjectDriver 경로를 구분합니다. 기본 Windows 경로의 codec 값을 추정하거나 설정 조회를 위해 AVDTP 채널을 경쟁적으로 열지 않습니다. 현재 설정 적용은 이 프로젝트가 실제로 소유한 경로에서만 가능하며, stream 시작·종료는 audio endpoint의 render demand와 PnP·전원 event가 담당합니다. 필드와 권한은 [장치 상태 계약](device-status.md)을 따릅니다.
+
 ## 오디오 endpoint 선택
 
 제안 1순위는 ACX/KMDF 기반 render endpoint입니다. ACX는 KMDF 위의 오디오 확장이며 WaveRT 스트리밍을 지원합니다. 다만 target WDK의 ACX API를 `windows-drivers-rs`가 바로 노출한다고 가정하지 않습니다. [ACX 설명](https://learn.microsoft.com/en-us/windows-hardware/drivers/audio/acx-audio-class-extensions-overview)
@@ -54,14 +60,14 @@ M1은 다음 증거를 확보해야 합니다.
 
 1. 대상 장치의 PnP instance와 기존 driver package·service·설정을 기록한다.
 2. 대상 기능 노드에 한정된 설치 실험으로 profile driver가 적절한 하위 stack에 연결되는지 확인한다.
-3. SDP로 Sink 서비스와 capability를 확인하고 signaling L2CAP channel을 연다.
+3. SDP로 Sink 서비스를 확인하고 소유권이 확보된 경로에서 signaling L2CAP·AVDTP endpoint discovery/GetCapabilities로 codec capability를 확인한다.
 4. 별도 media channel과 MTU, 채널별 disconnect/cancel completion을 확인한다.
 5. 기본 드라이버가 같은 스트림을 동시에 소유하지 않음을 확인한다.
 6. 제거·실패·재부팅 후 기본 오디오와 다른 Bluetooth 장치가 정상인지 비교한다.
 
 사용자 모드에서 임의 raw L2CAP socket을 열 수 있다고 설계하지 않습니다. transport driver가 문서화된 BRB/DDI 경계를 맡습니다. L2CAP의 open 결과·MTU는 실제 협상 값을 사용합니다. [L2CAP client DDI](https://learn.microsoft.com/en-us/windows-hardware/drivers/bluetooth/creating-a-l2cap-client-connection-to-a-remote-device)
 
-이 경로가 성립하지 않으면 UI·codec 확대를 멈추고 binding 설계를 재검토합니다. virtual audio endpoint만으로 기존 Windows A2DP 경로에 LDAC를 추가했다고 판단하지 않습니다.
+이 경로가 성립하지 않으면 UI·codec의 실행 구현 확대를 멈추고 binding 설계를 재검토합니다. 화면·상태 계약의 설계는 M0에서 수행할 수 있지만 구현 완료를 의미하지 않습니다. virtual audio endpoint만으로 기존 Windows A2DP 경로에 LDAC를 추가했다고 판단하지 않습니다.
 
 ## Rust와 native 경계
 
@@ -86,18 +92,23 @@ PCM → encoder frame → codec별 media payload → transport packet 순서로 
 - underflow는 계수하고 유한 시간 내 재개하지 못하면 suspend한다. 무한 silence 생성으로 실패를 감추지 않는다.
 - 버퍼 초과·지연 급증에 대한 bit rate 조정은 codec별로 합법적이고 peer가 허용한 범위 안에서만 수행한다.
 
-## 연결 흐름
+## 설정과 내부 stream 흐름
 
 ```mermaid
 sequenceDiagram
     participant UI as UI/CLI
     participant S as 세션 서비스
+    participant A as Windows Audio Engine
     participant D as Profile driver
     participant H as 헤드폰
-    UI->>S: Connect(device, desired policy)
+    UI->>S: ListDevices / GetSession / SavePolicy
+    S-->>UI: Windows 상태 / 사용 가능 설정 / 저장 revision
+    UI->>S: ApplyPolicy (owned route only)
+    S-->>UI: 다음 stream 설정 준비 또는 현재 stream 재구성
+    A->>S: Render stream demand (via audio driver)
     S->>D: Open selected device, new generation
     D->>H: SDP / signaling L2CAP
-    H-->>S: AVDTP endpoint capabilities (via driver)
+    H-->>S: AVDTP endpoint capabilities (owned driver)
     S->>S: local × remote × policy 후보·형식 검증
     S->>H: SetConfiguration / Open (via driver)
     H-->>S: accept + media connection 준비
@@ -109,10 +120,10 @@ sequenceDiagram
         S->>D: bounded encoded packets
         D->>H: L2CAP media
     end
-    UI->>S: Stop
+    A->>S: Render stream stop (via audio driver)
     S->>S: producer 중지, generation 무효화
     S->>D: cancel·close, completion 회수
-    S-->>UI: stopped or recovery required
+    S-->>UI: 재생 대기 또는 복구 필요 (Windows 연결과 별도)
 ```
 
 순서의 모든 실패는 [인터페이스 계약](interfaces.md)의 cleanup 경로로 수렴합니다. peer 응답 없이 Start 성공을 가정하지 않습니다.

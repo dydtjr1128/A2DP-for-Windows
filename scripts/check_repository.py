@@ -17,7 +17,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 # Platform, specification owner, rights holder, and this repository only.
 DOCUMENT_URL_PATHS = {
-    "learn.microsoft.com": ("/en-us/windows",),
+    "learn.microsoft.com": ("/en-us/windows", "/en-us/uwp"),
     "github.com": (
         "/microsoft/windows-drivers-rs",
         "/dydtjr1128/A2DP-for-Windows",

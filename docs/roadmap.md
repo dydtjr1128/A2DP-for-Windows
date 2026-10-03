@@ -1,6 +1,6 @@
 # 단계별 구현과 PR 계획
 
-기간을 약속하는 일정표가 아니라 **증거가 쌓이는 순서**입니다. 각 단계는 선행 결과를 확인한 다음 진행합니다. M1의 driver binding·복구 경로가 실패하면 codec/UI 확장을 먼저 하지 않습니다.
+기간을 약속하는 일정표가 아니라 **증거가 쌓이는 순서**입니다. 각 단계는 선행 결과를 확인한 다음 진행합니다. M1의 driver binding·복구 경로가 실패하면 codec/UI의 실행 구현 확장을 먼저 하지 않습니다. M0의 화면 시안과 계약 설계는 별도입니다.
 
 ## 이번 기반 작업
 
@@ -15,7 +15,7 @@
 ## M0: 재현 가능한 개발 기반
 
 - 완료 결과: 협업 규칙·설계·고정 Rust toolchain과 lockfile, codec 후보 정책의 경계 테스트.
-- UI 설계: 장치·연결 설정·진단·복구·트레이 화면과 접근성·상태 계약 정의. 앱 구현과 실기 증거는 별도.
+- UI 설계: Bluetooth 목록·기기 설정·진단·복구·트레이 화면과 접근성·상태 계약 정의. 앱 구현과 실기 증거는 별도.
 - PR 단위: 문서/정책 기반과 검사 실행 경로가 함께 설명 가능한 크기로 분리.
 - 증거: 로컬 및 CI의 실제 실행 결과.
 - 제한: encoder, driver, 장치 조회, 실제 오디오와 kernel build는 별도 단계.
@@ -38,7 +38,7 @@ G4의 test tone은 Windows 앱 오디오 지원이 아닙니다. G5에서 소리
 ## M2: SBC로 Windows 앱 오디오 통합
 
 - G4와 G5를 실제 bounded PCM/media pipeline으로 연결한다.
-- `desired/proposed/active`, session generation, Stop/cancel/drain, 서비스 crash cleanup을 구현한다.
+- `desired/proposed/active`, session generation, 내부 StopStream/cancel/drain, 서비스 crash cleanup을 구현한다. 설정 UI 종료와 stream 종료를 구분한다.
 - 30분 지속 재생, 20회 연결 해제·재연결, 10회 절전·복귀를 선정 환경에서 수행한다.
 - 장치 제거·encoder 실패·queue overrun·늦은 completion을 fault injection한다.
 - 기준: BSOD 없음, 회수되지 않은 요청 없음, stale audio 없음, 기본 driver 복구 확인.

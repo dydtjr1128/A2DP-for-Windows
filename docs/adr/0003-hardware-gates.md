@@ -9,7 +9,7 @@
 
 ## 결정
 
-Windows 11 x64의 한 조합에서 baseline과 복구 경로를 확보한 다음 device binding, L2CAP, SBC 시험 신호, Windows 앱 PCM을 단계적으로 연결합니다. 기본 드라이버와 소유권 충돌이 해결되기 전 codec/UI 확대를 진행하지 않습니다.
+Windows 11 x64의 한 조합에서 baseline과 복구 경로를 확보한 다음 device binding, L2CAP, SBC 시험 신호, Windows 앱 PCM을 단계적으로 연결합니다. 기본 드라이버와 소유권 충돌이 해결되기 전 codec/UI의 실행 구현 확대를 진행하지 않습니다. M0의 화면 시안·상태·설정 계약 설계는 이 gate와 병행할 수 있지만 구현·실기 통과로 세지 않습니다.
 
 실제 재생·재연결·절전·제거 결과를 기록하고 source/driver revision을 함께 남깁니다. mock/CI는 pure contract 증거이며 실기 통과로 보고하지 않습니다. 기반 작업의 CI는 driver 설치나 부팅 설정을 변경하지 않습니다.
 

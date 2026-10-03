@@ -7,6 +7,11 @@
 | [Microsoft Bluetooth Classic Audio](https://learn.microsoft.com/en-us/windows-hardware/drivers/bluetooth/bluetooth-classic-audio) | 프로파일·기본 codec 지원 목록 | A2DP Source, SBC 우선, HFP/LE와 범위 분리 |
 | [Bluetooth profile drivers](https://learn.microsoft.com/en-us/windows-hardware/drivers/bluetooth/bluetooth-profile-drivers-overview) | profile driver와 하위 L2CAP/SDP DDI | user mode 설정만으로 codec 추가를 가정하지 않음 |
 | [L2CAP client connection](https://learn.microsoft.com/en-us/windows-hardware/drivers/bluetooth/creating-a-l2cap-client-connection-to-a-remote-device) | BRB open/close, MTU 협상 | kernel transport와 실제 협상 결과 사용 |
+| [BluetoothDevice.ConnectionStatus](https://learn.microsoft.com/en-us/uwp/api/windows.devices.bluetooth.bluetoothdevice.connectionstatus) | Windows 장치 연결 상태 | codec·audio stream 상태와 분리 |
+| [IMMDevice::GetState](https://learn.microsoft.com/en-us/windows/win32/api/mmdeviceapi/nf-mmdeviceapi-immdevice-getstate) | endpoint active/disabled/not present/unplugged | endpoint 활성 상태를 재생·codec 상태로 해석하지 않음 |
+| [WAVEFORMATEXTENSIBLE](https://learn.microsoft.com/en-us/windows/win32/api/mmreg/ns-mmreg-waveformatextensible) | valid bits·container bits와 sample format | 입력 PCM 해상도·sample kind 표시 |
+| [SBC constants](https://android.googlesource.com/platform/packages/modules/Bluetooth/+/refs/heads/main/system/stack/include/a2dp_sbc_constants.h) | Mono/Dual/Stereo/Joint Stereo 정의 | PCM channel count와 codec coding mode 분리 |
+| [LDAC encoder API](https://android.googlesource.com/platform/external/libldac/+/refs/heads/main/inc/ldacBT.h) | channel mode·품질 enum·sampling 계열별 bitrate | codec별 선택지와 품질 표시 |
 | [ACX overview](https://learn.microsoft.com/en-us/windows-hardware/drivers/audio/acx-audio-class-extensions-overview) | KMDF 기반, WaveRT, PortCls 공존 | endpoint 후보와 M1 검증 범위 |
 | [windows-drivers-rs](https://github.com/microsoft/windows-drivers-rs) | 지원 구조·WDK 준비·초기 단계 안내 | Rust 우선, native bridge 가능성, 별도 driver workspace |
 | [Microsoft driver signing](https://learn.microsoft.com/en-us/windows-hardware/drivers/install/kernel-mode-code-signing-policy--windows-vista-and-later-) | 개발·production 서명 경계 | 실기 시험과 공개 배포 분리 |
