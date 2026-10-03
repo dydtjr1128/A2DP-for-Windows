@@ -42,7 +42,7 @@ flowchart TB
 
 제안 1순위는 ACX/KMDF 기반 render endpoint입니다. ACX는 KMDF 위의 오디오 확장이며 WaveRT 스트리밍을 지원합니다. 다만 target WDK의 ACX API를 `windows-drivers-rs`가 바로 노출한다고 가정하지 않습니다. [ACX 설명](https://learn.microsoft.com/en-us/windows-hardware/drivers/audio/acx-audio-class-extensions-overview)
 
-M1에서 필요한 bindings, PnP 모델, 가상 endpoint 적합성을 확인합니다. 충족하지 못하면 PortCls/WaveRT와 C/C++ 최소 bridge를 비교합니다. SYSVAD는 오디오 구조 참고 자료이며 그대로 Bluetooth 송신 드라이버가 되는 샘플은 아닙니다. [SYSVAD 설명](https://learn.microsoft.com/en-us/windows-hardware/drivers/audio/sample-audio-drivers)
+M1에서 필요한 bindings, PnP 모델, 가상 endpoint 적합성을 확인합니다. 충족하지 못하면 PortCls/WaveRT와 C/C++ 최소 bridge를 비교합니다. endpoint의 역할·수명·PCM 전달 계약은 이 프로젝트의 요구사항과 Windows DDI를 기준으로 정의합니다.
 
 첫 PCM format 제안은 48 kHz, stereo, signed 16-bit little-endian입니다. M2 이후 44.1 kHz와 다른 PCM 폭을 추가합니다. 이 값은 SBC의 모든 허용 형식을 뜻하지 않으며, output format이 encoder 입력과 다르면 명시적인 변환 단계가 필요합니다. 초기 버전에는 숨은 resampling을 넣지 않습니다.
 

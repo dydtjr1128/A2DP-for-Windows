@@ -76,11 +76,14 @@ UI/CLI ↔ 서비스는 **로컬 named pipe**, 서비스 ↔ driver는 장치 in
 | ListDevices | 비식별 ID, 연결 상태, 조회 상태 | 조회만, 권한 없는 장치 경로 노출 금지 |
 | GetCapabilities | local/remote codec별 제약, query generation | unknown과 empty를 구분 |
 | GetSession | desired/proposed/active, lifecycle, counters | snapshot 자체 generation 포함 |
-| ApplyPolicy | 검증 결과와 적용 결과 또는 재시작 필요 | 설정 저장과 적용 성공을 구분 |
+| SavePolicy | desired 저장과 새 policy revision | expected revision 검사, 현재 스트림은 유지 |
+| ApplyPolicy | 저장된 revision의 적용 결과 또는 재시작 필요 | generation·policy revision 검사, 저장 성공과 적용 성공 구분 |
 | Connect / Stop | 최종 상태 또는 유한 deadline의 진행 ID | 사용자 세션·장치 접근 검사 |
 | ExportDiagnostics | 비식별화 snapshot | 기본적으로 PCM·raw address·dump 제외 |
 
 pipe ACL은 서비스 SID와 허용된 로컬 사용자만 접근시키고 remote client를 거부합니다. 다른 Windows 로그인 세션의 장치 제어 정책은 M2에서 명확히 정합니다. 인증한 pipe client를 기준으로 권한을 판단하며 JSON의 user 필드를 신뢰하지 않습니다.
+
+UI의 저장하고 적용은 SavePolicy 성공 후 해당 revision으로 ApplyPolicy를 요청합니다. 저장 실패 시 ApplyPolicy를 보내지 않습니다. 저장 성공·적용 실패에서는 desired를 보존하고 실제 active 상태를 따로 보고합니다. 다른 client의 동시 수정은 revision 충돌로 거부하며, 상세 사용자 흐름은 [UI 설계](ui-design.md)를 따릅니다.
 
 ## Driver 제어·버퍼 계약 제안
 

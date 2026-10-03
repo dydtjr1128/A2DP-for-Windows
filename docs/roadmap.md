@@ -6,7 +6,7 @@
 
 | 단계 | 브랜치 | 결과 | 검증 |
 | --- | --- | --- | --- |
-| 1 | `feature/project-conventions` | starter kit 적용, README, 변경 이력 | YAML·링크·diff, 원격 양식 |
+| 1 | `feature/project-conventions` | 협업 지침·양식, README, 변경 이력 | YAML·링크·diff, 원격 양식 |
 | 2 | `feature/detailed-design` | 요구사항·상세 설계·ADR·실기 기준 | 출처·문서 정합성·링크·diff |
 | 3 | `feature/rust-foundation` | OS 독립 Rust core와 실제 빌드·검사 기반 | Rust fmt/clippy/test/build, 문서 검사, Windows/Linux CI |
 
@@ -15,6 +15,7 @@
 ## M0: 재현 가능한 개발 기반
 
 - 완료 결과: 협업 규칙·설계·고정 Rust toolchain과 lockfile, codec 후보 정책의 경계 테스트.
+- UI 설계: 장치·연결 설정·진단·복구·트레이 화면과 접근성·상태 계약 정의. 앱 구현과 실기 증거는 별도.
 - PR 단위: 문서/정책 기반과 검사 실행 경로가 함께 설명 가능한 크기로 분리.
 - 증거: 로컬 및 CI의 실제 실행 결과.
 - 제한: encoder, driver, 장치 조회, 실제 오디오와 kernel build는 별도 단계.
@@ -48,7 +49,7 @@ G4의 test tone은 Windows 앱 오디오 지원이 아닙니다. G5에서 소리
 1. LDAC backend·상세 협상·wire payload·실기 시험을 하나의 완결된 범위로 도입한다.
 2. aptX와 aptX HD를 각각 같은 조건으로 도입한다.
 3. 장치별 희망 설정의 atomic 저장과 실제 적용 결과를 분리한다.
-4. CLI 상태·진단을 확립한 다음 UI 프레임워크를 선택한다.
+4. [UI 상세 설계](ui-design.md)의 화면·상태·접근성 계약과 선택한 시안을 기준으로 UI 프레임워크를 검증하고 구현한다.
 5. AAC·LL은 권리·구현 조건이 해결된 경우에만 독립 기능 단계로 편입한다.
 
 한 codec의 통과를 다른 codec의 완료로 계산하지 않습니다. 코덱 선택 정책 변경은 unsupported 조합과 fallback 동작을 함께 검증합니다.

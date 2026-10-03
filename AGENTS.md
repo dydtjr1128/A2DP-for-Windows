@@ -16,7 +16,7 @@
 | 외부 연동·권한·민감 정보 경계 | OS 드라이버·Bluetooth·오디오. 설치, 장치 바인딩 변경, 테스트 서명과 부팅 보안 설정 변경은 별도 실기 검증 작업 |
 | 기본 브랜치·머지 방식·필수 검사 | `main`, merge commit으로 단계별 커밋 보존. `scripts/check.ps1` Full과 CI의 Windows/Linux job 통과. 서버 branch protection 설정과는 별도 작업 기준 |
 | 버전·변경 이력·릴리스 기준 | [CHANGELOG](CHANGELOG.md)의 Unreleased. 초기 기반은 배포 가능한 드라이버 릴리스가 아님 |
-| 템플릿 원본 저장소·tag 또는 commit·적용 파일 | `dydtjr1128/project-starter-kit@e759f1c3c4603b80044d8ed4b870f18de18a9486`, 파일 목록·조정 이유는 [적용 기록](docs/starter-kit-adoption.md) |
+| 협업 구성과 문서 근거 | [협업 구성](docs/project-conventions.md), [공식 기술 근거](docs/sources.md) |
 
 명령은 manifest·스크립트·README에서 확인하고 실행 위치와 전제 조건을 함께 적는다. 확인하지 못한 명령은 추측해 실행하지 않는다.
 
@@ -31,6 +31,8 @@
 
 ## Windows 오디오 프로젝트 경계
 
+- 제품 요구사항과 공식 사양을 기준으로 독립 설계한다. 문서·코드·화면·PR에 다른 제품의 이름, 링크, 비교 문구나 기획 출처를 넣지 않는다.
+- 외부 링크는 플랫폼·규격·권리자의 공식 기술 자료와 실제 사용하는 개발 도구의 공식 저장소에 한정한다. 문서 링크 허용 범위는 `scripts/check_repository.py`에서 확인한다.
 - 실제 헤드폰 재생 증거 없이 코덱 지원·드라이버 호환·지연 개선을 완료로 표시하지 않는다.
 - Windows 기본 코덱 지원과 이 프로젝트가 구현한 기능을 구분한다. 일반 앱 설정으로 임의 코덱을 추가할 수 있다고 가정하지 않는다.
 - 커널/FFI `unsafe`에는 메모리 소유권, 수명, 스레드·IRQL 조건과 실패 시 정리 책임을 기록한다.
