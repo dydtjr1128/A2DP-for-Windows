@@ -26,6 +26,7 @@ A2DP는 Advanced Audio Distribution Profile이며, 이 프로젝트는 송신 �
 | [설계 문서](docs/README.md) | 요구사항, 아키텍처, 인터페이스, ADR, 구현·실기 검증 계획 |
 | [UI 설계](docs/ui-design.md) | 장치·코덱 설정·오류 복구 화면, 상태별 동작과 접근성 |
 | [장치 설정 시안](docs/ui/device-settings.png) | Bluetooth 목록, 지원 codec·현재 상태·장치별 설정 |
+| [HTML 시안](docs/ui/device-settings.html) | 실제 글자·control 치수와 모의 편집·저장·적용, 브라우저에서 열기 |
 | [상태·측정 계약](docs/device-status.md) | Windows 연결과 앱 경로, codec·채널·PCM 해상도·관측 kbps·품질 |
 | [협업 구성](docs/project-conventions.md) | 작업 규칙, 이슈·PR 양식과 저장소 운영 기준 |
 | [CHANGELOG.md](CHANGELOG.md) | 단계별 변경 이력 |
