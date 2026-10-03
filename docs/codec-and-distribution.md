@@ -6,14 +6,14 @@
 
 | 코덱 | 후보 구현·관찰한 조건 | 개인 개발 | 공개·상업 배포 전 확인 | 도입 순서 |
 | --- | --- | --- | --- | --- |
-| SBC | BlueZ libsbc, LGPL-2.1-or-later | source 조건을 지키는 실험 후보 | 링크 방식, 수정 소스·고지·재링크 조건; 대안 구현 비교 | 첫 실기 |
+| SBC | A2DP 필수 코덱, 구현 방식은 규격 검토 후 결정 | bitstream·상호운용 시험 설계 | 구현 출처와 배포 조건 확정 | 첫 실기 |
 | LDAC | AOSP libldac encoder, Apache-2.0 | 공개 encoder 시험 후보 | 원본·수정 고지, 특허 grant 범위, 상표·인증 별도 확인 | SBC 이후 |
 | aptX | AOSP encoder_for_aptx, Apache-2.0 표기 | 공개 encoder 시험 후보 | 정확한 반입 파일 전체 조건과 상표·제3자 권리 | LDAC 이후 개별 |
 | aptX HD | AOSP encoder_for_aptxhd, Apache-2.0 표기 | 공개 encoder 시험 후보 | 일반 aptX와 별도 backend·format·실기 검증 | aptX와 별도 |
 | AAC | AOSP FDK AAC, 독자 라이선스 | 조건을 검토한 개발 시험 후보 | 코드 사용 조건 외 특허 계약 적용 범위 확인 필요 | 조건부 보류 |
-| aptX Low Latency | PipeWire 등의 연동 구현 참고 | 프로토콜·상호운용 연구 후보 | LL 전용 협상·구현·특허·상표·인증 근거 미확정 | 조건부 보류 |
+| aptX Low Latency | 공식 규격·권리 범위 확인 후 구현 여부 결정 | 프로토콜·상호운용 시험 설계 | LL 전용 협상·구현·특허·상표·인증 근거 미확정 | 조건부 보류 |
 
-근거: [SBC](https://kernel.googlesource.com/pub/scm/bluetooth/sbc/+/refs/heads/master/sbc/sbc.c), [LDAC](https://android.googlesource.com/platform/external/libldac/+/refs/heads/main/LICENSE), [aptX](https://android.googlesource.com/platform/packages/modules/Bluetooth/+/refs/heads/main/system/embdrv/encoder_for_aptx/src/aptXbtenc.c), [aptX HD](https://android.googlesource.com/platform/packages/modules/Bluetooth/+/refs/heads/main/system/embdrv/encoder_for_aptxhd/src/aptXHDbtenc.c), [FDK AAC](https://android.googlesource.com/platform/external/aac/+/refs/heads/main/NOTICE), [AAC program](https://www.via-la.com/licensing-programs/aac/), [PipeWire](https://github.com/PipeWire/pipewire/blob/master/spa/plugins/bluez5/a2dp-codec-aptx.c).
+공식 근거: [SBC와 A2DP](https://learn.microsoft.com/en-us/windows-hardware/drivers/bluetooth/bluetooth-classic-audio), [LDAC](https://android.googlesource.com/platform/external/libldac/+/refs/heads/main/LICENSE), [aptX](https://android.googlesource.com/platform/packages/modules/Bluetooth/+/refs/heads/main/system/embdrv/encoder_for_aptx/src/aptXbtenc.c), [aptX HD](https://android.googlesource.com/platform/packages/modules/Bluetooth/+/refs/heads/main/system/embdrv/encoder_for_aptxhd/src/aptXHDbtenc.c), [FDK AAC](https://android.googlesource.com/platform/external/aac/+/refs/heads/main/NOTICE), [AAC program](https://www.via-la.com/licensing-programs/aac/).
 
 개인용이라는 이유만으로 모든 권리 조건이 없어지지는 않습니다. Apache-2.0의 소스 사용 허용을 모든 제3자 특허·제품 인증·로고 사용 허가로 확대하지 않습니다. FDK AAC의 source 사용 조건에는 필요한 특허권의 별도 확인이 명시되어 있습니다.
 
@@ -42,4 +42,4 @@
 
 공개 GitHub 저장소에 코드가 있다는 사실만으로 배포 라이선스가 선택된 것은 아닙니다. 현재 Cargo package를 추가해도 `publish = false`로 유지합니다.
 
-과거 대화의 인증서·등록비·환율은 예산 시나리오였으므로 이 설계에 확정 비용으로 복제하지 않습니다. 구매·계약 시점에 해당 공급자와 제품 범위를 다시 확인합니다. 드라이버 서명의 기준 자료는 [Microsoft 정책](https://learn.microsoft.com/en-us/windows-hardware/drivers/install/kernel-mode-code-signing-policy--windows-vista-and-later-)이며, SIG 확인은 [공식 qualification 안내](https://www.bluetooth.com/develop-with-bluetooth/qualify/)를 출발점으로 합니다.
+인증서·자격·특허 계약의 비용은 제품 범위와 구매·계약 시점의 공식 조건으로 확인합니다. 드라이버 서명의 기준 자료는 [Microsoft 정책](https://learn.microsoft.com/en-us/windows-hardware/drivers/install/kernel-mode-code-signing-policy--windows-vista-and-later-)이며, SIG 확인은 [공식 qualification 안내](https://www.bluetooth.com/develop-with-bluetooth/qualify/)를 출발점으로 합니다.

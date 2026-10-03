@@ -24,7 +24,9 @@ A2DP는 Advanced Audio Distribution Profile이며, 이 프로젝트는 송신 �
 | [crates/a2dp-core](crates/a2dp-core) | `no_std`, 외부 의존성 없는 코덱 후보 선택 정책과 경계 테스트 |
 | [scripts](scripts) | 문서·양식·Rust 통합 검사 |
 | [설계 문서](docs/README.md) | 요구사항, 아키텍처, 인터페이스, ADR, 구현·실기 검증 계획 |
-| [템플릿 적용 기록](docs/starter-kit-adoption.md) | 원본 revision, 적용·조정 내역 |
+| [UI 설계](docs/ui-design.md) | 장치·코덱 설정·오류 복구 화면, 상태별 동작과 접근성 |
+| [장치 설정 시안](docs/ui/device-settings.png) | 왼쪽 기기 목록, 오른쪽 코덱·음질·버퍼·연결 설정 |
+| [협업 구성](docs/project-conventions.md) | 작업 규칙, 이슈·PR 양식과 저장소 운영 기준 |
 | [CHANGELOG.md](CHANGELOG.md) | 단계별 변경 이력 |
 
 상세 구조는 [아키텍처](docs/architecture.md), 다음 구현 단계는 [로드맵](docs/roadmap.md)을 따릅니다. `a2dp-core`는 synthetic capability로 정책을 검증하며 장치를 조회하거나 재생하지 않습니다. 저장소 자체의 배포 라이선스는 아직 정하지 않았으며, 외부 코덱 소스·바이너리는 포함하지 않습니다.

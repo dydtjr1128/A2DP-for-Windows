@@ -88,7 +88,7 @@ body:
         - 확인한 자료와 관찰 결과:
 
   - type: textarea
-    id: alternatives
+    id: design_options
     attributes:
       label: 대안과 참고 자료 (선택)
       description: 기존 기능 활용 가능성, 검토한 대안, 관련 문서, 호환성 영향
