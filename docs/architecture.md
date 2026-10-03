@@ -36,7 +36,7 @@ flowchart TB
 | `drivers/bluetooth` | 장치별 SDP/L2CAP 요청, 취소·완료·전원 처리 | 사용자 입력 주소로 임의 Bluetooth peer 접속 |
 | `installer` | 선정 장치 binding, 서명·버전 확인, 복구 | 전체 Bluetooth 스택 삭제·필터 주입 |
 
-초기부터 빈 crate와 가짜 driver를 모두 생성하지 않습니다. 각 기능이 검증 가능한 단위가 될 때 디렉터리와 빌드를 추가합니다. 드라이버 workspace는 일반 Rust workspace와 분리하며 WDK·panic·linker 설정이 일반 코드에 전파되지 않게 합니다.
+현재 구현은 `crates/a2dp-core`의 codec identity·후보 선택 정책에 한정됩니다. 표의 나머지 경로는 계획입니다. 초기부터 빈 crate와 가짜 driver를 모두 생성하지 않습니다. 각 기능이 검증 가능한 단위가 될 때 디렉터리와 빌드를 추가합니다. 드라이버 workspace는 일반 Rust workspace와 분리하며 WDK·panic·linker 설정이 일반 코드에 전파되지 않게 합니다.
 
 ## 오디오 endpoint 선택
 

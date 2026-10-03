@@ -9,12 +9,12 @@
 | 항목 | 프로젝트 값 또는 기준 문서 |
 | --- | --- |
 | 목적과 주요 사용 흐름 | Windows PC의 재생음을 Bluetooth 헤드폰으로 전송하고 코덱을 제어. [README](README.md) |
-| 실행·배포 환경과 지원 런타임 | Windows 11 x64 우선. Rust 중심. 실제 드라이버와 코덱은 아직 미구현 |
-| 주요 소스·테스트 위치 | 현재 문서와 `.github/` 양식. 소스 추가 시 빌드·검사 명령도 함께 갱신 |
+| 실행·배포 환경과 지원 런타임 | Windows 11 x64 우선. 일반 core는 Rust 1.99.0, Python 3.11+, PowerShell 7+. 실제 드라이버와 코덱은 미구현 |
+| 주요 소스·테스트 위치 | `crates/a2dp-core/src`, `crates/a2dp-core/tests`, `scripts`. 현재 일반 core만 구현 |
 | 구조·동작 규칙의 담당 문서 | [설계 문서](docs/README.md), [아키텍처](docs/architecture.md), [인터페이스](docs/interfaces.md), [검증 계획](docs/validation.md) |
 | 생성 파일·사용자 데이터 위치와 편집 제한 | `target/`, `artifacts/`, 로그·덤프·서명 키는 커밋 금지. 장치 주소·사용자 경로는 공개 기록에서 제거 |
 | 외부 연동·권한·민감 정보 경계 | OS 드라이버·Bluetooth·오디오. 설치, 장치 바인딩 변경, 테스트 서명과 부팅 보안 설정 변경은 별도 실기 검증 작업 |
-| 기본 브랜치·머지 방식·필수 검사 | `main`, merge commit으로 단계별 커밋 보존. diff·링크·양식 확인, 코드 도입 후 해당 검사 추가 |
+| 기본 브랜치·머지 방식·필수 검사 | `main`, merge commit으로 단계별 커밋 보존. `scripts/check.ps1` Full과 CI의 Windows/Linux job 통과. 서버 branch protection 설정과는 별도 작업 기준 |
 | 버전·변경 이력·릴리스 기준 | [CHANGELOG](CHANGELOG.md)의 Unreleased. 초기 기반은 배포 가능한 드라이버 릴리스가 아님 |
 | 템플릿 원본 저장소·tag 또는 commit·적용 파일 | `dydtjr1128/project-starter-kit@e759f1c3c4603b80044d8ed4b870f18de18a9486`, 파일 목록·조정 이유는 [적용 기록](docs/starter-kit-adoption.md) |
 
@@ -22,12 +22,12 @@
 
 | 목적 | 실행 위치 | 명령 또는 문서 | 전제 조건 |
 | --- | --- | --- | --- |
-| 의존성 설치 | 저장소 루트 | 해당 없음 | 현재 단계는 문서·협업 양식만 포함 |
-| 개발 실행 | 저장소 루트 | 해당 없음 | 실행 가능한 앱·드라이버 없음 |
-| 변경 부분 검사 | 저장소 루트 | `git diff --check`와 변경 링크·YAML 확인 | Git, YAML 파서 |
-| 빠른 검사 | 저장소 루트 | `git diff --check` | 신규 파일은 staging 후 `git diff --cached --check`도 실행 |
-| 전체 검사 | 저장소 루트 | 링크 대상·YAML 파싱·필수 항목과 실제 GitHub 양식 확인 | Git, GitHub 조회 권한 |
-| 빌드·패키징 | 저장소 루트 | 해당 없음 | Rust 기반 도입 단계에서 명령 확정 |
+| 의존성 설치 | 저장소 루트 | `python -m pip install -r scripts/requirements-checks.txt` | Python 3.11+, Rustup은 toolchain 파일 사용. [개발 환경](docs/development.md) |
+| 개발 실행 | 저장소 루트 | 해당 없음 | 현재 library만 존재, 실행 가능한 앱·driver 없음 |
+| 변경 부분 검사 | 저장소 루트 | `cargo test -p a2dp-core --locked` 또는 `python scripts/check_repository.py` | 변경 대상에 맞춰 선택 |
+| 빠른 검사 | 저장소 루트 | `pwsh -NoProfile -File scripts/check.ps1 -Mode Quick` | Python 의존성, Rust, PowerShell 7, Windows MSVC 도구 |
+| 전체 검사 | 저장소 루트 | `pwsh -NoProfile -File scripts/check.ps1` | 문서·YAML·TOML·diff·fmt·clippy·test·release build·rustdoc |
+| 빌드·패키징 | 저장소 루트 | `cargo build --workspace --release --locked` | library만 생성. driver build·sign/package는 아직 해당 없음 |
 
 ## Windows 오디오 프로젝트 경계
 
