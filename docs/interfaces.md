@@ -28,12 +28,12 @@
 
 ## 세션과 상태 전이
 
-session은 하나의 장치·한 스트림을 소유합니다. 요청마다 `request_id`, 연결마다 `session_id`와 단조 증가 `generation`을 붙입니다. OS 장치 경로·Bluetooth 주소는 공개 ID로 사용하지 않습니다.
+session은 하나의 장치·한 앱 오디오 스트림을 소유합니다. Windows pairing·연결과 별개입니다. 요청마다 `request_id`, stream마다 `session_id`와 단조 증가 `generation`을 붙입니다. 서비스 재시작은 새 `service_instance_id`, 경로 변경은 새 `route_revision`으로 구분합니다. OS 장치 경로·Bluetooth 주소는 공개 ID로 사용하지 않습니다.
 
 ```mermaid
 stateDiagram-v2
     [*] --> Idle
-    Idle --> Discovering: connect
+    Idle --> Discovering: audio stream demand / owned route
     Discovering --> Configuring: capabilities complete
     Configuring --> Open: peer accepted / media ready
     Open --> Streaming: Start accepted / buffers ready
@@ -53,12 +53,13 @@ stateDiagram-v2
 
 | 사건 | 처리 계약 |
 | --- | --- |
-| 중복 Connect | 같은 request는 결과 재사용, 다른 장치/세션은 Busy 또는 명시적 전환 |
-| Stop 재호출 | 멱등. 정리 중에는 같은 완료를 관찰; 두 번 해제하지 않음 |
+| 중복 내부 StartStream | 같은 demand는 결과 재사용, 다른 장치/세션은 Busy. UI 설정 열기로 호출하지 않음 |
+| 내부 StopStream 재호출 | 멱등. 정리 중에는 같은 완료를 관찰; 두 번 해제하지 않음. Windows 전체 disconnect가 아님 |
 | 늦은 callback | generation 불일치이면 상태 변경 없이 해당 요청의 자원만 회수 |
-| 설정 변경 | 변경 가능 항목인지 확인; 필요한 경우 suspend → reconfigure 또는 재접속 |
+| 설정 변경 | 변경 가능 항목인지 확인; 필요한 경우 suspend → reconfigure 또는 앱 media stream 재시작. Windows 연결·binding 변경 없음 |
 | 장치 제거 | admission 중단, 새 generation, 모든 outstanding I/O 취소·회수 |
 | 서비스 종료 | 제어 요청 중단, PCM 중단, media 중단, transport close, resource 회수 |
+| 설정 UI 종료 | 클라이언트만 종료, Windows 연결·audio stream 유지. service 종료와 구분 |
 | 절전 복귀 | 기존 active 취소, 새로운 장치 상태·capability·MTU 확인 후 시작 |
 
 오류 복구로 Idle에 돌아와도 last error는 진단 snapshot에 남깁니다. RecoveryRequired는 앱 재시작만으로 해제하지 않습니다.
@@ -69,25 +70,26 @@ UI/CLI ↔ 서비스는 **로컬 named pipe**, 서비스 ↔ driver는 장치 in
 
 초기 제어 메시지는 4-byte little-endian payload 길이와 UTF-8 JSON입니다. 길이 상한 64 KiB, decode 깊이·문자열·배열 상한을 두고 부분 read/write를 처리합니다. 미지원 major version은 작업 실행 전에 거부합니다. 이는 앞으로 구현할 protocol이며 현재 listener가 없습니다.
 
-공통 envelope 제안: `schema_version`, `request_id`, `command`, `device_id`, `generation`, `payload`. 응답은 같은 request ID, 관찰한 generation, success 또는 안정적인 error code를 포함합니다. mutating command의 stale generation은 재조회하도록 거부합니다.
+공통 envelope 제안: `schema_version`, `request_id`, `command`, `device_id`, `service_instance_id`, `route_revision`, `payload`. stream이 존재할 때만 `session_generation`과 `format_revision`을 포함합니다. 응답은 같은 request ID와 관찰한 revision을 포함합니다. 적용 요청은 expected policy/capability/route revision과 nullable session generation을 검사합니다. stream이 없는 상태를 요청했는데 그사이 stream이 시작되어도 conflict로 거부합니다. UI는 조회 응답이 새 service instance인지 확인하고 이전 instance의 응답·counter를 이어 쓰지 않습니다.
 
 | 명령 | 결과 | 권한·제약 |
 | --- | --- | --- |
-| ListDevices | 비식별 ID, 연결 상태, 조회 상태 | 조회만, 권한 없는 장치 경로 노출 금지 |
+| ListDevices | 비식별 ID, 종류, pairing·Windows 연결·endpoint·route 상태 | Windows 목록 조회만, 연결·binding 변경 없음 |
 | GetCapabilities | local/remote codec별 제약, query generation, 설정 control의 지원 범위 | unknown과 empty를 구분, 미구현 control은 불가 이유 포함 |
-| GetSession | desired/proposed/active, lifecycle, counters | snapshot 자체 generation 포함 |
-| SavePolicy | desired 저장과 새 policy revision | expected revision 검사, 현재 스트림은 유지 |
-| ApplyPolicy | 저장된 revision의 적용 결과 또는 재시작 필요 | generation·policy revision 검사, 저장 성공과 적용 성공 구분 |
-| Connect / Stop | 최종 상태 또는 유한 deadline의 진행 ID | 사용자 세션·장치 접근 검사 |
+| GetSession | desired/proposed/active, lifecycle, CurrentAudioSnapshot | source·validity·generation·format revision 포함. [필드 계약](device-status.md) |
+| SavePolicy | desired 저장과 새 policy revision | local schema/backend 검증, remote 미확인은 pending. 현재 스트림 유지 |
+| ApplyPolicy | 저장된 revision의 적용 또는 다음 stream 준비 결과 | ProjectDriver와 fresh capability 필요. Bluetooth 연결·driver 교체 없음 |
 | ExportDiagnostics | 비식별화 snapshot | 기본적으로 PCM·raw address·dump 제외 |
 
 pipe ACL은 서비스 SID와 허용된 로컬 사용자만 접근시키고 remote client를 거부합니다. 다른 Windows 로그인 세션의 장치 제어 정책은 M2에서 명확히 정합니다. 인증한 pipe client를 기준으로 권한을 판단하며 JSON의 user 필드를 신뢰하지 않습니다.
 
 UI의 저장하고 적용은 SavePolicy 성공 후 해당 revision으로 ApplyPolicy를 요청합니다. 저장 실패 시 ApplyPolicy를 보내지 않습니다. 저장 성공·적용 실패에서는 desired를 보존하고 실제 active 상태를 따로 보고합니다. 다른 client의 동시 수정은 revision 충돌로 거부하며, 상세 사용자 흐름은 [UI 설계](ui-design.md)를 따릅니다.
 
-장치별 desired 설정의 계획 항목은 codec preference, sample rate mode/value, channel mode, bitrate mode/value, buffer profile, 명시적 SBC fallback, 장치 도착 시 자동 연결입니다. 미지원·읽기 전용·숨은 parameter를 저장 요청에 넣어 우회하지 못하도록 서비스가 재검증합니다. 자동 mode에서는 고정값이 활성 설정으로 해석되지 않아야 합니다.
+ApplyPolicy는 per-device owner에서 직렬화합니다. 적용 중 다른 SavePolicy/ApplyPolicy는 Busy로 거부하며 임의 queue에 쌓지 않습니다. 적용 시작과 결과 확정 전에 route/capability/session revision을 확인하고 장치 제거·owner 변경 시 결과를 active로 승격하지 않습니다. stream이 없으면 다음 render demand에 사용할 설정만 준비하고 재생을 강제로 시작하지 않습니다. 준비 결과는 active playback 결과와 다른 상태로 반환합니다.
 
-capability의 설정 descriptor는 알려진 parameter ID, 허용 enum 또는 min/max/step, readonly, 적용 시 재연결 필요 여부, 불가 이유 code를 전달합니다. UI의 문구·control 종류는 승인된 ID와 연결하고 임의 markup을 렌더링하지 않습니다. 품질 프리셋은 서비스가 검증한 parameter 집합이며 수동 변경 후에는 custom 상태로 표시합니다. wire schema와 각 codec의 수치 범위는 backend 구현 시 확정합니다.
+장치별 desired 설정은 codec preference, sample rate mode/value, PCM sample kind·valid bits·container bits, codec-specific channel mode, bitrate mode/value, quality preset, buffer profile, 명시적 SBC fallback입니다. Windows 자동 연결 정책을 앱 설정에 넣지 않습니다. 미지원·읽기 전용·숨은 parameter를 저장 요청으로 우회하지 못하도록 서비스가 재검증합니다. 자동 mode에서는 고정값을 활성 설정으로 해석하지 않습니다.
+
+capability의 설정 descriptor는 알려진 parameter ID, 허용 enum 또는 min/max/step, readonly, 적용 시 media stream 재시작 필요 여부, 불가 이유 code를 전달합니다. UI의 문구·control 종류는 승인된 ID와 연결하고 임의 markup을 렌더링하지 않습니다. 품질 프리셋은 서비스가 검증한 parameter 집합이며 수동 변경 후에는 custom 상태로 표시합니다. wire schema와 각 codec의 수치 범위는 backend 구현 시 확정합니다.
 
 ## Driver 제어·버퍼 계약 제안
 
@@ -128,13 +130,13 @@ PCM block 제안 필드: generation, format revision, 첫 sample index, frame co
 | CapabilityUnknown | 장치 능력 조회 실패 | 전송 일시 오류인 경우만 |
 | NoCommonCodec / UnsupportedFormat | 공통 코덱/형식 없음 | 명시적 fallback 후보 외 없음 |
 | PeerRejected | 거절 단계와 codec | 같은 설정 무한 반복 금지 |
-| DeviceDisconnected / RadioUnavailable | 연결 또는 어댑터 없음 | 장치 도착 확인 후 1/2/4초 간격, 최대 3회 |
+| DeviceDisconnected / RadioUnavailable | Windows 연결 또는 어댑터 없음 | Windows 복구와 실제 audio demand 확인 후 내부 stream 준비만 1/2/4초 간격, 최대 3회. UI가 Bluetooth 연결을 생성하지 않음 |
 | TransportTimeout | signaling/media timeout | 전체 연결 예산 30초 내 제한; cancel completion 별도 회수 |
 | QueueOverrun / Underrun | 끊김·drop 계수 | 정해진 frame 처리 후 suspend 또는 제한적 재시작 |
 | VersionMismatch / AccessDenied | 업데이트 또는 권한 필요 | 없음 |
 | DriverFault / RecoveryRequired | 복구 작업 필요 | binding·boot 설정 자동 변경 없음 |
 
-사용자 Stop, 장치 removal, 서비스 종료는 재시도 예약도 취소합니다. 재시도 budget은 attempt마다 초기화하지 않습니다.
+audio demand 종료, 장치 removal, 서비스 종료는 stream 재시도 예약도 취소합니다. 설정 UI 종료는 재생 종료가 아닙니다. 재시도 budget은 attempt마다 초기화하지 않습니다.
 
 ## 설정과 진단 보관
 

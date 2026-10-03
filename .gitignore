@@ -17,6 +17,7 @@
 # Local IDE and OS state
 .vs/
 .idea/
+/.codex/
 *.user
 *.suo
 Thumbs.db

@@ -47,7 +47,7 @@ parser fuzz는 user mode에서 먼저 수행하고 crash sample은 합성 데이
 
 ## UI 검증
 
-[UI 상세 설계](ui-design.md)의 UX-01~14를 구현 수용 기준으로 사용합니다. 목업 이미지는 시각 검토 자료이며 클릭·키보드·Narrator·고대비·DPI·service 연동 검증을 대체하지 않습니다. 구현 후에는 준비 실패, 상태 조회 실패, 설정 저장/적용 분리, stale 응답, 장치 전환, 연결 종료와 복구 실패, codec별 control 가용성·자동 mode·프리셋 변경을 실제 UI에서 확인합니다.
+[UI 상세 설계](ui-design.md)의 UX-01~16을 구현 수용 기준으로 사용합니다. 목업 이미지는 클릭·키보드·Narrator·고대비·DPI·service 검증을 대체하지 않습니다. 특히 Windows에서 이미 연결한 장치, WindowsDefault에서 codec 조회 불가, PCM valid/container bit 차이, bitrate 첫 window·reset·stale, codec별 stereo mode, UI 종료 시 재생 유지, 저장/적용 분리를 검증합니다.
 
 ## 초기 실기 목표
 
