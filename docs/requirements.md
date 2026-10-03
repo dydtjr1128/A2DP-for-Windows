@@ -32,7 +32,7 @@ Windows PC를 Bluetooth Classic A2DP Source로 동작시켜, 기존 헤드폰(Si
 | FR-08 | 정상 제거·복구 | M1/M4 | 대상 장치의 원래 드라이버 상태를 기록·복원하고 OS 기본 재생을 재검증 |
 | FR-09 | LDAC·aptX·aptX HD | M3 | 코덱별 권리 검토, golden vector와 실기 재생을 개별 통과 |
 | FR-10 | AAC·aptX Low Latency | 후속 조건부 | 구현·특허·배포 조건과 실제 peer 동작을 확인한 뒤 별도 승인된 기능 범위로 편입 |
-| FR-11 | 설정 UI | 설계 M0, 구현 M3 | Bluetooth 목록·장치 지원 codec·품질·stereo mode 선택, [UI 계약](ui-design.md)의 UX-01~16와 typography·접근성 검증 |
+| FR-11 | 설정 UI | 설계 M0, 구현 M3 | Bluetooth 목록·장치 지원 codec·품질·stereo mode 선택, [UI 계약](ui-design.md)의 UX-01~17과 typography·접근성 검증 |
 | FR-12 | Windows 연결과 설정 분리 | M1/M3 | 이미 연결한 장치에서 설정 동작, UI 선택·닫기·종료로 Bluetooth 연결·재생·기본 출력 변경 없음 |
 
 M0의 후보 선택 테스트는 FR-03의 순수 정책 부분만 검증합니다. FR-01/04 또는 실기 재생을 대신하지 않습니다.

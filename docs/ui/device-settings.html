@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>A2DP for Windows · UI 시안</title>
+<style>
+:root {
+  color-scheme: dark;
+  --sidebar:#1b2024; --page:#20262b; --field:#282f35;
+  --line:#394249; --text:#eef2f4; --muted:#b4bec5;
+  --accent:#a0e8cd; --accent-ink:#10231b;
+  --control-height:32px; --radius:4px;
+  font-family:"Segoe UI Variable Text","Segoe UI","Malgun Gothic",sans-serif;
+  font-size:14px; font-weight:400; line-height:1.5;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--page); color:var(--text); }
+button,input,select { font:inherit; color:inherit; }
+button,a,input,select,summary { -webkit-tap-highlight-color:transparent; }
+button,a,select,summary { touch-action:manipulation; }
+button,select,input[type=search] { min-height:var(--control-height); border:1px solid var(--line); border-radius:var(--radius); background:var(--field); }
+button { padding:4px 12px; cursor:pointer; line-height:22px; }
+button:hover:not(:disabled),a.quiet:hover { background:#333c43; }
+button:disabled { cursor:default; color:#839099; background:#262c31; border-color:#333b41; }
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible,summary:focus-visible {
+  outline:2px solid var(--accent); outline-offset:3px;
+}
+[hidden] { display:none !important; }
+.titlebar { height:36px; padding:0 20px; display:flex; align-items:center; border-bottom:1px solid var(--line); background:var(--sidebar); font-size:13px; }
+.workspace { display:grid; grid-template-columns:224px minmax(0,1fr); height:calc(100svh - 36px); min-height:480px; }
+.sidebar { background:var(--sidebar); border-right:1px solid var(--line); display:flex; flex-direction:column; padding:24px 16px 16px; min-width:0; }
+.sidebar h2 { margin:0 0 16px; padding:0 4px; font-size:14px; font-weight:600; }
+.search { width:100%; padding:4px 10px; }
+.search::placeholder { color:var(--muted); }
+.filters { display:flex; height:32px; margin:12px 0 20px; border:1px solid var(--line); border-radius:var(--radius); }
+.filters button { flex:1; min-height:30px; padding:4px 5px; border:0; border-radius:0; font-size:12px; min-width:0; background:transparent; }
+.filters button:first-child { border-radius:3px 0 0 3px; }
+.filters button:last-child { border-radius:0 3px 3px 0; }
+.filters button[aria-pressed=true] { background:#303b3b; color:var(--accent); }
+.device-list { margin:0 -4px; }
+.device { display:block; width:100%; min-height:56px; padding:9px 12px; text-align:left; background:transparent; border:1px solid transparent; border-radius:4px; margin-bottom:4px; line-height:20px; }
+.device[aria-pressed=true] { background:#2a3738; border-left:2px solid var(--accent); padding-left:11px; }
+.device strong { display:block; font-weight:500; font-size:14px; }
+.device span { display:block; font-size:12px; color:var(--muted); }
+.device[aria-pressed=true] strong { color:var(--accent); }
+.device:disabled { background:transparent; border-color:transparent; }
+.empty { font-size:13px; color:var(--muted); padding:12px; }
+.sidebar-actions { margin-top:auto; padding-top:24px; display:grid; gap:4px; }
+.quiet { display:block; background:transparent; border:1px solid transparent; border-radius:4px; padding:5px 8px; min-height:32px; text-align:left; font-size:12px; color:var(--muted); text-decoration:none; }
+.main { min-width:0; min-height:0; display:flex; flex-direction:column; }
+.pagebody { flex:1; min-height:0; overflow:auto; padding:26px 28px 24px; scrollbar-gutter:stable; }
+.device-heading { margin:0 0 4px; font-family:"Segoe UI Variable Display","Segoe UI","Malgun Gothic",sans-serif; font-size:20px; line-height:28px; font-weight:600; }
+.subtitle { margin:0; color:var(--muted); font-size:12px; }
+.support { display:flex; gap:14px; align-items:baseline; margin:14px 0 20px; font-size:13px; }
+.support-label { color:var(--muted); }
+.support-values { font-weight:400; letter-spacing:.1px; }
+.metrics { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); border-top:1px solid var(--line); padding:16px 0 0; margin:0; }
+.metric { padding:0 16px; border-left:1px solid var(--line); min-width:0; }
+.metric:first-child { padding-left:0; border-left:0; }
+.metric dt { color:var(--muted); font-size:12px; margin:0 0 4px; }
+.metric dd { font-size:14px; font-weight:600; margin:0; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.metric-note { margin:10px 0 20px; font-size:12px; color:var(--muted); }
+.tabs { display:flex; gap:8px; border-bottom:1px solid var(--line); margin-bottom:24px; }
+.tab { border:0; background:transparent; border-radius:0; padding:8px 12px 10px; min-height:40px; position:relative; }
+.tab:first-child { padding-left:0; padding-right:16px; }
+.tab[aria-selected=true] { color:var(--accent); font-weight:600; box-shadow:inset 0 -2px var(--accent); }
+.tab:hover:not(:disabled) { background:transparent; color:var(--accent); }
+.settings-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 28px; }
+.field { display:grid; grid-template-columns:112px minmax(0,1fr); align-items:center; gap:12px; min-height:32px; }
+.field > label,.field > .field-label { font-size:14px; }
+select { width:100%; height:32px; padding:3px 8px; }
+select:disabled { color:var(--muted); }
+.segmented { display:flex; border:1px solid var(--line); border-radius:4px; min-height:32px; background:var(--field); }
+.segmented label { position:relative; flex:1; text-align:center; min-width:0; font-size:14px; }
+.segmented input { position:absolute; opacity:0; width:1px; height:1px; }
+.segmented span { display:block; padding:4px 6px; line-height:22px; border-radius:3px; cursor:pointer; white-space:nowrap; }
+.segmented input:checked + span { color:var(--accent); background:#334441; }
+.segmented input:focus-visible + span { outline:2px solid var(--accent); outline-offset:3px; }
+.segmented input:disabled + span { color:#839099; cursor:default; }
+details { margin-top:28px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+summary { cursor:pointer; padding:12px 0; font-size:13px; font-weight:500; }
+.advanced-content { padding:4px 0 16px; font-size:13px; }
+.checkbox-row { display:flex; align-items:center; gap:8px; }
+.checkbox-row input { accent-color:var(--accent); margin:0; }
+.hint { color:var(--muted); font-size:12px; margin:6px 0 0; }
+.tabpanel { min-height:236px; }
+.info-table { width:100%; border-collapse:collapse; font-size:13px; }
+.info-table th,.info-table td { padding:12px 0; border-bottom:1px solid var(--line); text-align:left; font-weight:400; }
+.info-table th { width:170px; color:var(--muted); }
+.footer { border-top:1px solid var(--line); padding:16px 28px 14px; flex-shrink:0; }
+.footer-main { display:flex; gap:16px; align-items:center; justify-content:space-between; }
+.feedback { font-size:12px; color:var(--muted); margin:0; }
+.actions { display:flex; gap:8px; flex-shrink:0; }
+.actions button { width:96px; height:32px; white-space:nowrap; }
+.actions .primary { color:var(--accent-ink); background:var(--accent); border-color:var(--accent); }
+.actions .primary:hover:not(:disabled) { background:#b9f0dc; }
+.actions .primary:disabled { background:#314640; color:#839c92; border-color:#314640; }
+.example-note { margin:10px 0 0; color:var(--muted); font-size:12px; text-align:right; }
+dialog { background:var(--page); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:24px; width:360px; max-width:calc(100vw - 32px); }
+dialog::backdrop { background:#0009; }
+dialog h2 { font-size:16px; margin:0 0 8px; }
+dialog p { font-size:13px; color:var(--muted); margin:0 0 20px; }
+dialog .actions { justify-content:flex-end; }
+@media(max-width:1100px) {
+  .workspace { grid-template-columns:200px minmax(0,1fr); }
+  .pagebody { padding:24px 24px 20px; }
+  .settings-grid { grid-template-columns:1fr; gap:14px; }
+  .field { grid-template-columns:140px minmax(0,1fr); }
+  .metrics { grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px 0; }
+  .metric:nth-child(4) { border-left:0; padding-left:0; }
+  .footer { padding:14px 24px 12px; }
+  .footer-main { flex-wrap:wrap; }
+  .actions { margin-left:auto; }
+}
+@media(max-width:680px) {
+  .workspace { grid-template-columns:1fr; height:auto; min-height:calc(100svh - 36px); }
+  .sidebar { border-right:0; border-bottom:1px solid var(--line); padding:16px; }
+  .sidebar h2 { margin-bottom:10px; }
+  .device-list { display:flex; gap:8px; }
+  .device { flex:1; width:auto; margin:0; }
+  .filters { margin-bottom:12px; }
+  .sidebar-actions { padding-top:12px; display:flex; gap:8px; }
+  .main { min-height:640px; }
+  .pagebody { overflow:visible; padding:20px 16px; }
+  .field { grid-template-columns:112px minmax(0,1fr); }
+  .metric { padding:0 8px; }
+  .metric dd { font-size:13px; }
+  .footer { padding:16px; }
+  .actions { width:100%; }
+  .actions button { width:auto; flex:1; }
+}
+@media(forced-colors:active) {
+  .device[aria-pressed=true],.filters button[aria-pressed=true],.segmented input:checked + span { outline:1px solid Highlight; }
+  .tab[aria-selected=true] { border-bottom:2px solid Highlight; }
+}
+</style>
+</head>
+<body>
+<header class="titlebar">A2DP for Windows</header>
+<div class="workspace">
+  <aside class="sidebar" aria-label="Bluetooth 기기">
+    <h2>블루투스 기기</h2>
+    <input id="search" class="search" type="search" placeholder="기기 검색" aria-label="기기 검색" autocomplete="off">
+    <div class="filters" role="group" aria-label="기기 종류 필터">
+      <button type="button" data-filter="audio" aria-pressed="true">오디오 기기</button>
+      <button type="button" data-filter="all" aria-pressed="false">전체 장치</button>
+    </div>
+    <nav class="device-list" aria-label="설정할 기기 선택">
+      <button type="button" class="device" data-device="headphones" data-kind="audio" aria-pressed="true"><strong>책상 헤드폰</strong><span>연결됨</span></button>
+      <button type="button" class="device" data-device="speaker" data-kind="audio" aria-pressed="false"><strong>휴대용 스피커</strong><span>연결 안 됨</span></button>
+      <button type="button" class="device" data-device="mouse" data-kind="other" disabled hidden><strong>무선 마우스</strong><span>오디오 설정 대상 아님</span></button>
+    </nav>
+    <p class="empty" id="empty" hidden>검색 결과가 없습니다.</p>
+    <div class="sidebar-actions">
+      <button class="quiet" id="refresh" type="button">목록 새로 고침</button>
+      <a class="quiet" href="ms-settings:bluetooth">Windows Bluetooth 설정</a>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="pagebody">
+      <h1 class="device-heading" id="device-heading">책상 헤드폰</h1>
+      <p class="subtitle" id="connection">Windows 연결됨 · 오디오 전송 중</p>
+      <p class="support"><span class="support-label">지원 코덱</span><span class="support-values" id="supported">SBC · AAC · LDAC</span></p>
+      <dl class="metrics" aria-label="현재 오디오 상태">
+        <div class="metric"><dt>코덱</dt><dd id="metric-codec">SBC</dd></div>
+        <div class="metric"><dt>채널 모드</dt><dd id="metric-channel">Joint Stereo</dd></div>
+        <div class="metric"><dt>샘플링 주파수</dt><dd id="metric-rate">48 kHz</dd></div>
+        <div class="metric"><dt>입력 PCM</dt><dd id="metric-pcm">16 bit PCM</dd></div>
+        <div class="metric"><dt>전송률</dt><dd id="metric-bitrate">328 kbps</dd></div>
+        <div class="metric"><dt>품질</dt><dd id="metric-quality">균형</dd></div>
+      </dl>
+      <p class="metric-note" id="metric-note">오디오 데이터 기준 · 1초 평균</p>
+      <div class="tabs" role="tablist" aria-label="기기 설정 화면">
+        <button type="button" class="tab" id="tab-settings" role="tab" aria-controls="panel-settings" aria-selected="true" tabindex="0" data-tab="settings">오디오 설정</button>
+        <button type="button" class="tab" id="tab-diagnostics" role="tab" aria-controls="panel-diagnostics" aria-selected="false" tabindex="-1" data-tab="diagnostics">진단</button>
+        <button type="button" class="tab" id="tab-info" role="tab" aria-controls="panel-info" aria-selected="false" tabindex="-1" data-tab="info">장치 정보</button>
+      </div>
+      <section class="tabpanel" id="panel-settings" role="tabpanel" aria-labelledby="tab-settings">
+        <form id="settings" autocomplete="off">
+          <div class="settings-grid">
+            <div class="field"><label for="codec">코덱</label><select id="codec" name="codec"><option value="SBC">SBC</option><option disabled>AAC · 이 버전에서는 설정할 수 없음</option><option disabled>LDAC · 이 버전에서는 설정할 수 없음</option></select></div>
+            <div class="field"><label for="channel">채널 모드</label><select id="channel" name="channel"><option>Joint Stereo</option><option>Stereo</option><option>Dual Channel</option><option disabled>Mono · 현재 입력 형식과 맞지 않음</option></select></div>
+            <div class="field"><label for="rate">샘플링 주파수</label><select id="rate" name="rate" aria-describedby="format-note"><option>48 kHz</option><option disabled>44.1 kHz · 현재 입력 형식과 맞지 않음</option></select></div>
+            <div class="field"><label for="pcm">입력 PCM</label><select id="pcm" name="pcm" aria-describedby="format-note"><option>16 bit PCM</option><option disabled>24 bit PCM · 현재 입력 형식과 맞지 않음</option></select></div>
+            <div class="field"><span class="field-label" id="quality-label">품질</span><div class="segmented" role="group" aria-labelledby="quality-label">
+              <label><input type="radio" name="quality" value="안정성"><span>안정성</span></label><label><input type="radio" name="quality" value="균형" checked><span>균형</span></label><label><input type="radio" name="quality" value="음질"><span>음질</span></label>
+            </div></div>
+            <div class="field"><label for="buffer">오디오 버퍼</label><select id="buffer" name="buffer"><option>자동 (권장)</option><option>안정성 우선</option><option>지연 최소화</option></select></div>
+          </div>
+          <details>
+            <summary>고급 설정</summary>
+            <div class="advanced-content">
+              <label class="checkbox-row"><input type="checkbox" disabled>공통 코덱이 없으면 SBC 사용</label>
+              <p class="hint">SBC를 선택한 경우에는 필요하지 않습니다.</p>
+              <p class="hint" id="format-note">현재 입력과 맞는 형식만 선택할 수 있습니다. 선택할 수 없는 이유는 코덱·형식 목록에서 확인할 수 있습니다.</p>
+            </div>
+          </details>
+        </form>
+      </section>
+      <section class="tabpanel" id="panel-diagnostics" role="tabpanel" aria-labelledby="tab-diagnostics" hidden>
+        <table class="info-table"><tbody>
+          <tr><th scope="row">데이터 출처</th><td>UI 시안의 예시 데이터</td></tr>
+          <tr><th scope="row">현재 상태</th><td id="diagnostic-state">오디오 전송 중</td></tr>
+          <tr><th scope="row">전송률 기준</th><td>오디오 payload · 1초 평균</td></tr>
+          <tr><th scope="row">설정 상태</th><td id="diagnostic-policy">변경 사항 없음</td></tr>
+        </tbody></table>
+      </section>
+      <section class="tabpanel" id="panel-info" role="tabpanel" aria-labelledby="tab-info" hidden>
+        <table class="info-table"><tbody>
+          <tr><th scope="row">기기 이름</th><td id="info-name">책상 헤드폰</td></tr>
+          <tr><th scope="row">Windows 연결</th><td id="info-link">연결됨</td></tr>
+          <tr><th scope="row">지원 코덱</th><td id="info-codecs">SBC · AAC · LDAC</td></tr>
+          <tr><th scope="row">표시 데이터</th><td>예시 기기 · 실제 장치 정보 아님</td></tr>
+        </tbody></table>
+      </section>
+    </div>
+    <footer class="footer">
+      <div class="footer-main">
+        <p class="feedback" id="feedback" role="status" aria-live="polite">변경 사항 없음</p>
+        <div class="actions">
+          <button type="button" id="cancel" disabled>변경 취소</button>
+          <button type="button" id="save" disabled>저장만</button>
+          <button type="button" id="apply" class="primary" disabled>설정 적용</button>
+        </div>
+      </div>
+      <p class="example-note">UI 시안 · 예시 데이터</p>
+    </footer>
+  </main>
+</div>
+<dialog id="discard-dialog" aria-labelledby="discard-title">
+  <h2 id="discard-title">변경 사항을 버릴까요?</h2>
+  <p>다른 기기를 선택하면 저장하지 않은 변경 사항을 버립니다.</p>
+  <div class="actions"><button type="button" id="keep-editing">계속 편집</button><button type="button" id="discard">변경 버리기</button></div>
+</dialog>
+<script>
+'use strict';
+// Display-only fixture. No device, network, storage, driver or service calls.
+const byId = id => document.getElementById(id);
+const initial = {codec:'SBC',channel:'Joint Stereo',rate:'48 kHz',pcm:'16 bit PCM',quality:'균형',buffer:'자동 (권장)'};
+const devices = {
+  headphones:{name:'책상 헤드폰',connected:true,supported:'SBC · AAC · LDAC',saved:{...initial},active:{...initial},draft:{...initial}},
+  speaker:{name:'휴대용 스피커',connected:false,supported:'이전 확인값 · SBC',saved:{...initial},active:null,draft:{...initial}}
+};
+let selected = 'headphones';
+let filter = 'audio';
+let pendingDevice = null;
+const equal = (a,b) => JSON.stringify(a) === JSON.stringify(b);
+const form = byId('settings');
+function current() { return devices[selected]; }
+function readDraft() { return Object.fromEntries(new FormData(form)); }
+function status(message) { byId('feedback').textContent = message; byId('diagnostic-policy').textContent = message; }
+function updateButtons(message) {
+  const d=current(); const dirty=!equal(d.draft,d.saved);
+  byId('cancel').disabled=!dirty;
+  byId('save').disabled=!dirty;
+  byId('apply').disabled=!d.connected || equal(d.draft,d.active);
+  byId('apply').title=d.connected ? '' : 'Windows에서 연결한 뒤 적용할 수 있습니다.';
+  status(message ?? (dirty ? '저장하지 않은 변경 사항' : (d.connected && !equal(d.saved,d.active) ? '저장됨 · 아직 적용하지 않음' : '변경 사항 없음')));
+}
+function updateMetrics() {
+  const d=current();
+  for (const key of ['codec','channel','rate','pcm','quality']) byId('metric-'+key).textContent=d.active?.[key] ?? '재생 대기';
+  byId('metric-bitrate').textContent=d.active ? '328 kbps' : '해당 없음';
+  byId('metric-note').textContent=d.active ? '오디오 데이터 기준 · 1초 평균' : '현재 재생 정보 없음';
+}
+function showDevice(id) {
+  selected=id; const d=current();
+  document.querySelectorAll('[data-device]').forEach(b=> { if (b.dataset.kind==='audio') b.setAttribute('aria-pressed',String(b.dataset.device===id)); });
+  byId('device-heading').textContent=d.name;
+  byId('connection').textContent=d.connected ? 'Windows 연결됨 · 오디오 전송 중' : 'Windows 연결 안 됨 · 재생 대기';
+  byId('supported').textContent=d.supported;
+  byId('info-name').textContent=d.name; byId('info-link').textContent=d.connected?'연결됨':'연결 안 됨';
+  byId('info-codecs').textContent=d.supported; byId('diagnostic-state').textContent=d.connected?'오디오 전송 중':'재생 대기';
+  for (const [name,value] of Object.entries(d.draft)) {
+    const control=form.elements.namedItem(name);
+    control.value=value;
+  }
+  updateMetrics(); updateButtons();
+}
+function filterDevices() {
+  const query=byId('search').value.trim().toLocaleLowerCase('ko');
+  let count=0;
+  document.querySelectorAll('[data-device]').forEach(b=>{
+    const show=(filter==='all'||b.dataset.kind==='audio') && b.textContent.toLocaleLowerCase('ko').includes(query);
+    b.hidden=!show; if(show) count++;
+  });
+  byId('empty').hidden=count>0;
+}
+form.addEventListener('submit', e=>e.preventDefault());
+form.addEventListener('change',()=>{current().draft=readDraft();updateButtons();});
+byId('search').addEventListener('input',filterDevices);
+document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{
+  filter=b.dataset.filter;
+  document.querySelectorAll('[data-filter]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  filterDevices();
+}));
+document.querySelectorAll('[data-device][data-kind=audio]').forEach(b=>b.addEventListener('click',()=>{
+  if(b.dataset.device===selected) return;
+  if(!equal(current().draft,current().saved)) { pendingDevice=b.dataset.device; byId('discard-dialog').showModal(); return; }
+  showDevice(b.dataset.device);
+}));
+byId('keep-editing').addEventListener('click',()=>{pendingDevice=null;byId('discard-dialog').close();});
+byId('discard').addEventListener('click',()=>{
+  current().draft={...current().saved}; const next=pendingDevice; pendingDevice=null; byId('discard-dialog').close(); showDevice(next);
+});
+byId('discard-dialog').addEventListener('cancel',()=>{pendingDevice=null;});
+byId('cancel').addEventListener('click',()=>{current().draft={...current().saved};showDevice(selected);});
+byId('save').addEventListener('click',()=>{current().saved={...current().draft};updateButtons('시안에서 저장됨 · 현재 오디오 상태는 유지');});
+byId('apply').addEventListener('click',()=>{
+  if(!current().connected) return;
+  current().saved={...current().draft}; current().active={...current().draft};
+  updateMetrics(); updateButtons('시안에서 설정 적용됨');
+});
+byId('refresh').addEventListener('click',()=>{filterDevices();status('예시 목록을 새로 고쳤습니다.');});
+const tabs=[...document.querySelectorAll('[data-tab]')];
+function activateTab(tab,focus=false) {
+  tabs.forEach(t=>{
+    const active=t===tab; t.setAttribute('aria-selected',String(active));t.tabIndex=active?0:-1;
+    byId('panel-'+t.dataset.tab).hidden=!active;
+  });
+  if(focus) tab.focus();
+}
+tabs.forEach((tab,index)=>{
+  tab.addEventListener('click',()=>activateTab(tab));
+  tab.addEventListener('keydown',event=>{
+    let next;
+    if(event.key==='ArrowRight') next=(index+1)%tabs.length;
+    if(event.key==='ArrowLeft') next=(index+tabs.length-1)%tabs.length;
+    if(event.key==='Home') next=0;
+    if(event.key==='End') next=tabs.length-1;
+    if(next!==undefined) {event.preventDefault();activateTab(tabs[next],true);}
+  });
+});
+</script>
+</body>
+</html>
