@@ -41,11 +41,7 @@ pwsh -NoProfile -File scripts/check.ps1
 
 ## Git 작업 방식
 
-- `origin/main` 갱신 후 목적별 `feature/` 브랜치와 워크트리에서 변경한다.
-- diff·관련 검사를 완료한 후 커밋·push·PR을 진행한다.
-- 후행 PR은 선행 PR merge 뒤 최신 main에서 시작하여 중복 diff를 피한다.
-- 원격 base/head와 check 결과를 확인하고 merge commit으로 반영한다.
-- 로컬 `main`을 fast-forward로 맞추고 깨끗한 상태인지 확인한다.
+브랜치·워크트리·커밋·검증한 head의 머지·로컬 정리는 [작업 지침](../AGENTS.md)의 Git과 협업 절차를 따릅니다. 이 문서의 검사 명령과 실기 준비 범위는 머지 규칙과 별도로 적용합니다.
 
 Git 계정·origin 인증 정보는 저장소 로컬 설정으로 관리합니다. 토큰이나 사용자 PC별 경로를 tracked script에 넣지 않습니다.
 

@@ -1,11 +1,12 @@
 name: 질문·사용 문의
 description: 사용 방법이나 문서에서 해결하지 못한 질문
+labels: [question]
 body:
   - type: markdown
     attributes:
       value: |
         **작성 요령**
-        - **제목**: 확인할 대상을 구체적으로 표현. 예: `프로젝트별 설정의 적용 우선순위 문의`
+        - **제목**: 확인할 대상을 구체적으로 표현. 예: `HTML 시안의 저장과 적용 차이 문의`
         - 오동작이 의심되면 결함 보고, 새 기능이 필요하면 기능·개선 제안 양식 사용
 
   - type: textarea
@@ -14,8 +15,8 @@ body:
       label: 요약
       description: 짧은 불릿 2-3개, 명사형·단답형 종결(`~합니다`·`~습니다`·`~한다` 생략)
       placeholder: |
-        - 설정 파일의 적용 순서 확인 필요
-        - 프로젝트별 설정과 공통 설정의 우선순위 문의
+        - HTML 시안에서 저장과 적용의 차이 확인 필요
+        - 실제 장치 설정에 반영되는 단계 문의
     validations:
       required: true
 
